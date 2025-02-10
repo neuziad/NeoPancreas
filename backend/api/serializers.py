@@ -1,3 +1,5 @@
+import datetime
+import random
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from rest_framework import serializers
@@ -15,7 +17,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "basal_rate", "correction_factor", "glucose_target", 
             "glucose_min", "glucose_max", "bolus_max", 
             "carb_ratio", "insulin_duration", "iob", "cob", 
-            "max_iob", "residual_iob"
+            "max_iob", "residual_iob", "diabetic_profile"
         ]
         extra_kwargs = {
             "basal_rate": {"default": 1.2},
@@ -30,10 +32,35 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "cob": {"default": 0.00},
             "max_iob": {"default": 25.0},
             "residual_iob": {"default": 0.0},
+            "diabetic_profile": {"required": False},
         }
     
     def create(self, validated_data):
+        # # Get dob from validated_data
+        # dob = validated_data.get("dob")
+
+        # if not dob:
+        #     raise serializers.ValidationError("Date of birth is required.")
+        
+        # # Calculate the user's age based on dob
+        # year_of_birth = dob.year
+        # current_year = datetime.now().year
+        # age = current_year - year_of_birth
+        
+        # # Generate a random 3-digit number for the profiles 0-9
+        # random_number = str(random.randint(0, 999)).zfill(3)
+        
+        # # Determine the diabetic profile type based on age
+        # if age >= 18:
+        #     diabetic_profile = f"adult#{random_number}"
+        # else:
+        #     diabetic_profile = f"adolescent#{random_number}"
+
+        # validated_data["diabetic_profile"] = diabetic_profile
+
+        # Call the super() method to actually create the UserProfile instance
         return super().create(validated_data)
+
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(required=True)  # Handle extra user fields
@@ -50,10 +77,9 @@ class UserSerializer(serializers.ModelSerializer):
         profile_data = validated_data.pop("profile", None)  
         user = User.objects.create_user(**validated_data)  # Hashes password automatically
 
-        # Create user profile if extra fields exist
         if profile_data:
             UserProfile.objects.create(user=user, **profile_data)
-
+        
         return user
 
     def update(self, instance, validated_data):
