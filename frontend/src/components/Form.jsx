@@ -8,6 +8,10 @@ import LoadingIndicator from './LoadingIndicator'
 function Form({ route, method }) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
+    const [email, setEmail] = useState('')
+    const [dob, setDob] = useState('')
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
@@ -17,8 +21,20 @@ function Form({ route, method }) {
         setLoading(true)
         e.preventDefault()
 
+        // Prepare data payload
+        const payload = {
+            username,
+            password,
+            profile: {
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                dob
+            }
+        }
+
         try {
-            const res = await api.post(route, { username, password })
+            const res = await api.post(route, payload)
             if (method === 'login') {
                 localStorage.setItem(ACCESS_TOKEN, res.data.access)
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh)
@@ -27,7 +43,7 @@ function Form({ route, method }) {
                 navigate('/login')
             }
         } catch (error) {
-            alert(error)
+            alert(error.response ? error.response.data.detail : error.message)
         } finally {
             setLoading(false)
         }
@@ -36,6 +52,39 @@ function Form({ route, method }) {
     return (
         <form onSubmit={handleSubmit} className="form-container">
             <h1>{name}</h1>
+
+            {method === 'register' && (
+                <>
+                    <input
+                        className="form-input"
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="First Name"
+                    />
+                    <input
+                        className="form-input"
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Last Name"
+                    />
+                    <input
+                        className="form-input"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email"
+                    />
+                    <input
+                        className="form-input"
+                        type="date"
+                        value={dob}
+                        onChange={(e) => setDob(e.target.value)}
+                    />
+                </>
+            )}
+
             <input
                 className="form-input"
                 type="text"

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework import generics
 from .serializers import UserSerializer, GlucoseSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import GlucoseReading
+from .models import GlucoseReading, UserProfile
 
 
 class GlucoseListCreate(generics.ListCreateAPIView):
@@ -21,7 +21,7 @@ class GlucoseListCreate(generics.ListCreateAPIView):
             print(serializer.errors)
 
 
-class CreateUserView(generics.CreateAPIView):
+class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
