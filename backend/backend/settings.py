@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-71e@2ucb*qx)vzd63f04)g5_3j!hpp=5y7r7@x_ic)_m1zw5y#"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
 # !! DEPLOYMENT !! - set this to specific server
 ALLOWED_HOSTS = ["*"]
@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "simulator",
     "rest_framework",
     "corsheaders",
+    "django_celery_results"
 ]
 
 MIDDLEWARE = [
@@ -150,3 +151,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
+
+# Task scheduler
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_RESULT_BACKEND", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"

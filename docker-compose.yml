@@ -1,0 +1,53 @@
+services:
+  django:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: django_app
+    env_file: backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: react_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - django
+
+  redis:
+    image: redis:alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.celery
+    container_name: celery_worker
+    env_file: backend/.env
+    depends_on:
+      - redis
+      - django
+    volumes:
+      - ./backend:/app
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.celery-beat
+    container_name: celery_beat
+    env_file: backend/.env
+    depends_on:
+      - redis
+      - django
+    volumes:
+      - ./backend:/app

@@ -8,6 +8,7 @@ from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
 from simglucose.controller.base import Action
 from decimal import Decimal, getcontext
+from celery import shared_task
 
 # Constants
 getcontext().prec = 3
@@ -39,6 +40,7 @@ def call_bolus(carbs_on_board):
 
 
 # Create a reading and apply the necessary insulin
+@shared_task
 def generate_reading(user_id):
     # Variables needed for simulation
     user = User.objects.get(id=user_id)
@@ -96,3 +98,5 @@ def generate_reading(user_id):
     bolus_injected = 0.00
     set_bolus_called(False)
     set_carbs_on_board(0)
+
+    print(GlucoseReading.objects.filter(patient=user)[0])
