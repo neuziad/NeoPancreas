@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0004_alter_userprofile_user'),
+        ("api", "0004_alter_userprofile_user"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='diabetic_profile',
-            field=models.CharField(blank=True, default='adult#001', max_length=14, null=True),
+            model_name="userprofile",
+            name="diabetic_profile",
+            field=models.CharField(
+                blank=True, default="adult#001", max_length=14, null=True
+            ),
         ),
     ]

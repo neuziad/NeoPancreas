@@ -4,75 +4,74 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0005_userprofile_diabetic_profile'),
+        ("api", "0005_userprofile_diabetic_profile"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='userprofile',
-            name='basal_rate',
+            model_name="userprofile",
+            name="basal_rate",
             field=models.DecimalField(decimal_places=2, default=1.2, max_digits=4),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='bolus_max',
+            model_name="userprofile",
+            name="bolus_max",
             field=models.DecimalField(decimal_places=2, default=15.0, max_digits=4),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='carb_ratio',
+            model_name="userprofile",
+            name="carb_ratio",
             field=models.DecimalField(decimal_places=1, default=10.0, max_digits=3),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='cob',
+            model_name="userprofile",
+            name="cob",
             field=models.DecimalField(decimal_places=2, default=0.0, max_digits=4),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='correction_factor',
+            model_name="userprofile",
+            name="correction_factor",
             field=models.DecimalField(decimal_places=1, default=1.0, max_digits=3),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='diabetic_profile',
-            field=models.CharField(default='adult#001', max_length=14),
+            model_name="userprofile",
+            name="diabetic_profile",
+            field=models.CharField(default="adult#001", max_length=14),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='glucose_max',
+            model_name="userprofile",
+            name="glucose_max",
             field=models.DecimalField(decimal_places=1, default=11.0, max_digits=3),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='glucose_min',
+            model_name="userprofile",
+            name="glucose_min",
             field=models.DecimalField(decimal_places=1, default=3.9, max_digits=3),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='glucose_target',
+            model_name="userprofile",
+            name="glucose_target",
             field=models.DecimalField(decimal_places=1, default=6.4, max_digits=3),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='insulin_duration',
+            model_name="userprofile",
+            name="insulin_duration",
             field=models.IntegerField(default=240),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='iob',
+            model_name="userprofile",
+            name="iob",
             field=models.DecimalField(decimal_places=2, default=0.0, max_digits=4),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='max_iob',
+            model_name="userprofile",
+            name="max_iob",
             field=models.DecimalField(decimal_places=2, default=25.0, max_digits=4),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='residual_iob',
+            model_name="userprofile",
+            name="residual_iob",
             field=models.FloatField(default=0.0),
         ),
     ]

@@ -29,8 +29,8 @@ function Form({ route, method }) {
                 first_name: firstName,
                 last_name: lastName,
                 email,
-                dob
-            }
+                dob,
+            },
         }
 
         try {

@@ -1,0 +1,17 @@
+{
+    "name": "NeoPancreas",
+    "short_name": "NeoPancreas",
+    "description": "A web-based artificial pancreas system for diabetic patients.",
+    "start_url": "/",
+    "orientation": "natural",
+    "display": "standalone",
+    "background_color": "#fcfffe",
+    "theme_color": "#fcfffe",
+    "icons": [
+        {
+            "src": "favicon.ico",
+            "sizes": "64x64 32x32 24x24 16x16",
+            "type": "image/x-icon"
+        }
+    ]
+}

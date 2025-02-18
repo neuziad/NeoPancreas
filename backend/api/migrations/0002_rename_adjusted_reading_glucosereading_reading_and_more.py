@@ -6,44 +6,107 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0001_initial'),
+        ("api", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='glucosereading',
-            old_name='adjusted_reading',
-            new_name='reading',
+            model_name="glucosereading",
+            old_name="adjusted_reading",
+            new_name="reading",
         ),
         migrations.RenameField(
-            model_name='glucosereading',
-            old_name='trend_alert',
-            new_name='trend',
+            model_name="glucosereading",
+            old_name="trend_alert",
+            new_name="trend",
         ),
         migrations.CreateModel(
-            name='UserProfile',
+            name="UserProfile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('first_name', models.CharField(blank=True, max_length=30)),
-                ('last_name', models.CharField(blank=True, max_length=30)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('dob', models.DateField(blank=True, null=True)),
-                ('basal_rate', models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
-                ('correction_factor', models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True)),
-                ('glucose_target', models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True)),
-                ('glucose_min', models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True)),
-                ('glucose_max', models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True)),
-                ('bolus_max', models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
-                ('carb_ratio', models.DecimalField(blank=True, decimal_places=1, max_digits=2, null=True)),
-                ('insulin_duration', models.IntegerField(blank=True, null=True)),
-                ('iob', models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
-                ('cob', models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
-                ('max_iob', models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
-                ('residual_iob', models.FloatField(blank=True, null=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("first_name", models.CharField(blank=True, max_length=30)),
+                ("last_name", models.CharField(blank=True, max_length=30)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                ("dob", models.DateField(blank=True, null=True)),
+                (
+                    "basal_rate",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=4, null=True
+                    ),
+                ),
+                (
+                    "correction_factor",
+                    models.DecimalField(
+                        blank=True, decimal_places=1, max_digits=3, null=True
+                    ),
+                ),
+                (
+                    "glucose_target",
+                    models.DecimalField(
+                        blank=True, decimal_places=1, max_digits=3, null=True
+                    ),
+                ),
+                (
+                    "glucose_min",
+                    models.DecimalField(
+                        blank=True, decimal_places=1, max_digits=3, null=True
+                    ),
+                ),
+                (
+                    "glucose_max",
+                    models.DecimalField(
+                        blank=True, decimal_places=1, max_digits=3, null=True
+                    ),
+                ),
+                (
+                    "bolus_max",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=4, null=True
+                    ),
+                ),
+                (
+                    "carb_ratio",
+                    models.DecimalField(
+                        blank=True, decimal_places=1, max_digits=2, null=True
+                    ),
+                ),
+                ("insulin_duration", models.IntegerField(blank=True, null=True)),
+                (
+                    "iob",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=4, null=True
+                    ),
+                ),
+                (
+                    "cob",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=4, null=True
+                    ),
+                ),
+                (
+                    "max_iob",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=4, null=True
+                    ),
+                ),
+                ("residual_iob", models.FloatField(blank=True, null=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]
