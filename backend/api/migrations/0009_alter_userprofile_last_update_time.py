@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0008_glucosereading_basal_injected_and_more'),
+        ("api", "0008_glucosereading_basal_injected_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='userprofile',
-            name='last_update_time',
-            field=models.DateTimeField(default='2025-02-18 10:16:17'),
+            model_name="userprofile",
+            name="last_update_time",
+            field=models.DateTimeField(default="2025-02-18 10:16:17"),
         ),
     ]

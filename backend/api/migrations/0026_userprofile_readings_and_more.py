@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0025_alter_userprofile_last_update_time'),
+        ("api", "0025_alter_userprofile_last_update_time"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='readings',
-            field=models.ManyToManyField(blank=True, to='api.glucosereading'),
+            model_name="userprofile",
+            name="readings",
+            field=models.ManyToManyField(blank=True, to="api.glucosereading"),
         ),
         migrations.AlterField(
-            model_name='userprofile',
-            name='last_update_time',
-            field=models.DateTimeField(default='2025-02-18 10:43:45'),
+            model_name="userprofile",
+            name="last_update_time",
+            field=models.DateTimeField(default="2025-02-18 10:43:45"),
         ),
     ]

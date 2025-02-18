@@ -40,9 +40,13 @@ class UserProfile(models.Model):
     max_iob = models.DecimalField(decimal_places=2, max_digits=4, default=25.0)
     residual_iob = models.FloatField(default=0.0)
     em_enabled = models.BooleanField(default=False)
-    diabetic_profile = models.CharField(max_length=14, null=True, blank=True)  # Simulation profile for simglucose
+    diabetic_profile = models.CharField(
+        max_length=14, null=True, blank=True
+    )  # Simulation profile for simglucose
     carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
-    last_update_time = models.DateTimeField(default=datetime.now().strftime('%Y-%m-%d %H:%M:%S').__str__())
+    last_update_time = models.DateTimeField(
+        default=datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()
+    )
 
     def save(self, *args, **kwargs):
         if not self.diabetic_profile:
@@ -125,14 +129,14 @@ class UserProfile(models.Model):
                 gettext_lazy("Max IOB out of range"),
                 params={"value": value},
             )
-        
+
     ## Insulin and glucose calculations
     def update_iob(self):
         current_time = float(datetime.now().timestamp())
 
         # Initialize time tracking
         if self.last_update_time is None:
-            self.last_update_time = current_time 
+            self.last_update_time = current_time
 
         # Compute time elapsed since last update
         elapsed_time = (current_time - self.last_update_time) / 60
@@ -155,15 +159,17 @@ class UserProfile(models.Model):
         # Add new insulin doeses
         self.iob += new_bolus
         if new_basal > 0:
-            basal_integral = (new_basal * self.insulin_duration) * (1 - math.exp(-elapsed_time / self.insulin_duration))
+            basal_integral = (new_basal * self.insulin_duration) * (
+                1 - math.exp(-elapsed_time / self.insulin_duration)
+            )
             self.iob += basal_integral
 
         return self.iob
-    
+
     def titrate_basal(self):
         """
         Adjusts basal insulin delivery based on glucose levels, trends, and IOB.
-        
+
         Returns:
         - Adjusted basal insulin dose for the next step (U)
         """
@@ -195,10 +201,10 @@ class UserProfile(models.Model):
             "↘": 0.1,
             "↓": 0,
             "↓↓": 0,
-            "NODATA": 0
+            "NODATA": 0,
         }
         basal_per_step *= trend_multipliers.get(glucose_trend, 1.0)
-        
+
         # Reduce insulin if IOB is high (soft limit mechanism)
         if self.iob > 3.0:
             basal_per_step *= float(Decimal(1) / Decimal(self.iob))
@@ -209,16 +215,16 @@ class UserProfile(models.Model):
 
         # Ensure no negative insulin delivery
         basal_per_step = max(0, basal_per_step)
-        
+
         # Round to nearest 0.05 for insulin precision
         basal_per_step = round(basal_per_step / 0.05) * 0.05
 
         return basal_per_step
-        
+
     def titrate_bolus(self, carbs):
         """
         Adjusts bolus insulin delivery based on glucose levels, IOB, and carb input.
-        
+
         Parameters:
         - carbs: Carbohydrate inputted (g)
 
@@ -238,7 +244,7 @@ class UserProfile(models.Model):
         # No bolus when blood glucose is below minimum
         if current_glucose < min_gl:
             return 0
-        
+
         # Calculate initial bolus value from carbs
         bolus_per_step = carbs / carb_ratio
 
@@ -254,14 +260,13 @@ class UserProfile(models.Model):
 
         # Make sure value doesn't go negative or beyond the max bolus
         bolus_per_step = min(max(0, bolus_per_step), max_bolus)
-        
+
         # Round to nearest 0.05 for insulin precision
         bolus_per_step = round(bolus_per_step / 0.05) * 0.05
 
         return bolus_per_step
 
-    
-    def delete(self, using = ..., keep_parents = ...):
+    def delete(self, using=..., keep_parents=...):
         return super().delete(using, keep_parents)
 
     def __str__(self):
@@ -270,7 +275,7 @@ class UserProfile(models.Model):
 
 class GlucoseReading(models.Model):
     """Represents a single glucose reading with its metadata."""
-    
+
     patient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="glucose_readings"
     )
@@ -281,25 +286,27 @@ class GlucoseReading(models.Model):
     bolus_injected = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
 
     ## Glucose calculations
-    def get_noise_level():
-        """Computes the rolling average noise level from the CGM sensor."""
-        if not CGMSensor.withName('Dexcom')._noise_generator.noise:
-            return 0
-        return np.mean(CGMSensor.withName('Dexcom')._noise_generator.noise) / 18
+    def adjust_for_noise(reading):
+        """Computes the rolling average noise level from the CGM sensor and removes
+        glucose readings based on noise levels per ISO standards. (ISO 15197:2013)"""
 
-    def adjust_glucose_reading(reading, noise):
-        """Adjusts glucose readings based on noise levels per ISO standards."""
+        if not CGMSensor.withName("Dexcom")._noise_generator.noise:
+            noise = 0
+        else:
+            noise = np.mean(CGMSensor.withName("Dexcom")._noise_generator.noise) / 18
+
         if abs(noise) > 0.83 and reading <= 5.55:
             return 0
         if abs(noise) > (0.15 * reading) and reading >= 5.56:
             return 0
+
         return reading
 
     def calculate_trend(self):
         """Calculates the trend based on glucose levels over 15 minutes."""
         if len(self.patient.readings) < 3:
             return 0
-        
+
         past_bg = self.patient.readings[0].reading
         current_bg = self.atient.readings[-1].reading
         return (current_bg - past_bg) / 3
@@ -309,7 +316,6 @@ class GlucoseReading(models.Model):
         if len(self.patient.readings) < 3:
             trend_alert = "NODATA"
         else:
-
             # Assign trend category based on Dexcom G7 criteria
             if abs(trend_rate) < 0.0555:
                 trend_alert = "→"
@@ -319,14 +325,14 @@ class GlucoseReading(models.Model):
                 trend_alert = "↑" if trend_rate > 0 else "↓"
             else:
                 trend_alert = "↑↑" if trend_rate > 0 else "↓↓"
-            
-            if (self.patient.readings[0] == 0):
+
+            if self.patient.readings[0] == 0:
                 trend_alert = "NODATA"
-        
+
         return trend_alert
 
     def format_timestamp(self):
-        return self.timestamp.strftime('%Y-%m-%d %H:%M:%S').__str__()
+        return self.timestamp.strftime("%Y-%m-%d %H:%M:%S").__str__()
 
     def __str__(self):
         return f"GLUCOSE>> [{self.timestamp}] | {self.reading:.1f} mmoL/L | {self.trend} | {self.basal_injected:.2f} U Basal | {self.bolus_injected:.2f} U Bolus"

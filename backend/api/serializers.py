@@ -30,7 +30,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "diabetic_profile",
             "em_enabled",
             "carb_ratio",
-            "last_update_time"
+            "last_update_time",
         ]
         extra_kwargs = {
             "basal_rate": {"default": 1.2},
