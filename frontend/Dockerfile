@@ -9,7 +9,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install --frozen-lockfile
 
 # Copy project files
-COPY frontend .
+COPY frontend/ .
 
 # Build the frontend
 RUN npm run build

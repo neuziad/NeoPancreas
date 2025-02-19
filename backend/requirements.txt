@@ -14,5 +14,6 @@ dj-database-url
 ruff
 celery
 django-celery-results
+django-celery-beat
 redis
 gunicorn

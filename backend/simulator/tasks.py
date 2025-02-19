@@ -1,5 +1,6 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-import numpy as np
+from django.core.exceptions import ObjectDoesNotExist
 from api.models import GlucoseReading
 from simglucose.simulation.env import T1DSimEnv
 from simglucose.patient.t1dpatient import T1DPatient
@@ -12,6 +13,7 @@ from celery import shared_task
 
 # Constants
 getcontext().prec = 3
+User = get_user_model()
 
 # Variables storing injection data
 basal_injected = 0.00
@@ -42,61 +44,70 @@ def call_bolus(carbs_on_board):
 # Create a reading and apply the necessary insulin
 @shared_task
 def generate_reading(user_id):
-    # Variables needed for simulation
-    user = User.objects.get(id=user_id)
-    env = T1DSimEnv(
-        patient=T1DPatient.withName(user.profile.diabetic_profile),
-        sensor=CGMSensor.withName("Dexcom", seed=user_id),
-        pump=InsulinPump.withName("Insulet", seed=user_id),
-        scenario=RandomScenario(seed=user_id),
-    )
+    try:
+        user = User.objects.get(id=user_id)
 
-    # Get observation if glucose readings exist
-    if user.profile.readings:
-        latest_reading = user.profile.readings[-1]
-        obs = env.step(
-            Action(
-                basal=Decimal(latest_reading.basal_injected),
-                bolus=Decimal(latest_reading.bolus_injected),
+        if user.is_authenticated:
+            # Variables needed for simulation
+            env = T1DSimEnv(
+                patient=T1DPatient.withName(user.profile.diabetic_profile),
+                sensor=CGMSensor.withName("Dexcom", seed=user_id),
+                pump=InsulinPump.withName("Insulet", seed=user_id),
+                scenario=RandomScenario(seed=user_id),
             )
-        )
-    else:
-        obs = env.step(Action(basal=0, bolus=0))
 
-    # Get reading
-    reading = obs[0] / 18  # convert to mmol/L
+            # Get observation if glucose readings exist
+            if user.profile.readings:
+                latest_reading = user.profile.readings[-1]
+                obs = env.step(
+                    Action(
+                        basal=Decimal(latest_reading.basal_injected),
+                        bolus=Decimal(latest_reading.bolus_injected),
+                    )
+                )
+            else:
+                obs = env.step(Action(basal=0, bolus=0))
 
-    # Get final reading
-    adjusted_read = GlucoseReading.adjust_for_noise(reading)
+            # Get reading
+            reading = obs[0] / 18  # convert to mmol/L
 
-    # Compute trend
-    trend = GlucoseReading.detect_trend_alert()
+            # Get final reading
+            adjusted_read = GlucoseReading.adjust_for_noise(reading)
 
-    # Calculate basal titration
-    basal_injected = user.profile.titrate_basal()
+            # Compute trend
+            trend = GlucoseReading.detect_trend_alert()
 
-    # Calculate bolus titration if bolus was called
-    if _is_bolus_called:
-        bolus_injected = user.profile.titrate_bolus(_carbs_on_board)
-    else:
-        bolus_injected = 0.00
+            # Calculate basal titration
+            basal_injected = user.profile.titrate_basal()
 
-    # Update IOB
-    user.profile.update_iob()
+            # Calculate bolus titration if bolus was called
+            if _is_bolus_called:
+                bolus_injected = user.profile.titrate_bolus(_carbs_on_board)
+            else:
+                bolus_injected = 0.00
 
-    # Create new glucose reading object
-    GlucoseReading.objects.create(
-        patient=user,
-        reading=adjusted_read,
-        trend=trend,
-        basal_injected=basal_injected,
-        bolus_injected=bolus_injected,
-    )
+            # Update IOB
+            user.profile.update_iob()
 
-    # Clear variables
-    basal_injected = 0.00
-    bolus_injected = 0.00
-    set_bolus_called(False)
-    set_carbs_on_board(0)
+            # Create new glucose reading object
+            GlucoseReading.objects.create(
+                patient=user,
+                reading=adjusted_read,
+                trend=trend,
+                basal_injected=basal_injected,
+                bolus_injected=bolus_injected,
+            )
 
-    print(GlucoseReading.objects.filter(patient=user)[0])
+            # Clear variables
+            basal_injected = 0.00
+            bolus_injected = 0.00
+            set_bolus_called(False)
+            set_carbs_on_board(0)
+
+            print(GlucoseReading.objects.filter(patient=user)[0])
+        else:
+            print(f"User with id {user_id} is not logged in or active.")
+        
+    except ObjectDoesNotExist:
+        print(f"User with id {user_id} not found.")
+

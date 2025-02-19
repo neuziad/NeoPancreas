@@ -45,7 +45,7 @@ class UserProfile(models.Model):
     )  # Simulation profile for simglucose
     carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
     last_update_time = models.DateTimeField(
-        default=datetime.now().strftime("%Y-%m-%d %H:%M:%S").__str__()
+        default=datetime.min.strftime("%Y-%m-%d %H:%M:%S")
     )
 
     def save(self, *args, **kwargs):
@@ -332,7 +332,7 @@ class GlucoseReading(models.Model):
         return trend_alert
 
     def format_timestamp(self):
-        return self.timestamp.strftime("%Y-%m-%d %H:%M:%S").__str__()
+        return self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
     def __str__(self):
         return f"GLUCOSE>> [{self.timestamp}] | {self.reading:.1f} mmoL/L | {self.trend} | {self.basal_injected:.2f} U Basal | {self.bolus_injected:.2f} U Bolus"

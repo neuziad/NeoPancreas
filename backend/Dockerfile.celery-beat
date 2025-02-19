@@ -9,4 +9,4 @@ COPY backend .
 
 ENV PYTHONPATH=/app
 
-CMD ["celery", "-A", "backend.celery", "beat", "--loglevel=info"]
+CMD ["celery", "-A", "backend", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers.DatabaseScheduler"]

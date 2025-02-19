@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-71e@2ucb*qx)vzd63f04)g5_3j!hpp=5y7r7@x_ic)_m1zw5y#"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", False)
@@ -61,7 +61,8 @@ INSTALLED_APPS = [
     "simulator",
     "rest_framework",
     "corsheaders",
-    "django_celery_results"
+    "django_celery_results",
+    "django_celery_beat"
 ]
 
 MIDDLEWARE = [
@@ -155,6 +156,14 @@ CORS_ALLOWS_CREDENTIALS = True
 # Task scheduler
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("REDIS_RESULT_BACKEND", "redis://localhost:6379/0")
+CELERY_BEAT_SCHEDULE = {
+    'generate-reading-every-5-minutes': {
+        'task': 'simulator.tasks.generate_reading',
+        'schedule': 300.0,  # 5 minutes
+        'args': (1,),  # default user_id (replace with actual)
+    },
+}
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers.DatabaseScheduler"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
