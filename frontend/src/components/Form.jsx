@@ -5,6 +5,7 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants'
 import '../styles/Form.css'
 import LoadingIndicator from './LoadingIndicator'
 
+// eslint-disable-next-line react/prop-types
 function Form({ route, method }) {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
@@ -21,17 +22,22 @@ function Form({ route, method }) {
         setLoading(true)
         e.preventDefault()
 
+        // Format date of birth
+        const formattedDob = dob ? new Date(dob).toISOString().split('T')[0] : null
+
         // Prepare data payload
         const payload = {
             username,
             password,
+            first_name: firstName,
+            last_name: lastName,
+            email,
             profile: {
-                first_name: firstName,
-                last_name: lastName,
-                email,
-                dob,
+                dob: formattedDob
             },
         }
+        
+        console.log("Submitting payload:", payload) // Debugging
 
         try {
             const res = await api.post(route, payload)
@@ -43,6 +49,7 @@ function Form({ route, method }) {
                 navigate('/login')
             }
         } catch (error) {
+            console.log("Error: ", error.response?.data)
             alert(error.response ? error.response.data.detail : error.message)
         } finally {
             setLoading(false)

@@ -1,12 +1,12 @@
-from django.shortcuts import render
 from django.contrib.auth.models import User
 from rest_framework import generics
 from .serializers import UserSerializer, GlucoseSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import GlucoseReading
-from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.dispatch import receiver
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from django.http import JsonResponse
+import json
+from django.contrib.auth.decorators import login_required
 
 
 class GlucoseListCreate(generics.ListCreateAPIView):
@@ -29,23 +29,47 @@ class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+@login_required
+def start_simulation(request):
+    user = request.user
+    task_name = f"user-reading-task-{user.id}"
 
-@receiver(user_logged_in)
-def on_user_login(sender, request, user, **kwargs):
-    # Update Celery Beat's schedule to reflect the logged-in user
-    schedule, created = IntervalSchedule.objects.get_or_create(
-        every=5, period=IntervalSchedule.MINUTES
+    # Check if the task already exists
+    if PeriodicTask.objects.filter(name=task_name).exists():
+        return JsonResponse({"message": "Simulation already running"}, status=400)
+
+    # Create an interval schedule for every 5 minutes
+    schedule, _ = IntervalSchedule.objects.get_or_create(
+        every=5,
+        period=IntervalSchedule.MINUTES,
     )
-    
-    # Check if there's already a task, otherwise create one
+
+    # Create the periodic task
     PeriodicTask.objects.create(
         interval=schedule,
-        name=f"Generate reading for {user.username}",
-        task="simulator.tasks.generate_reading",
-        args=f"[{user.id}]",
+        name=task_name,
+        task="simulator.tasks.create_reading",
+        args=json.dumps([user.id]),
     )
 
-@receiver(user_logged_out)
-def on_user_logout(sender, request, user, **kwargs):
-    # Remove the task when the user logs out
-    PeriodicTask.objects.filter(name=f"Generate reading for {user.username}").delete()
+    return JsonResponse({"message": "Simulation started"}, status=200)
+
+@login_required
+def stop_simulation(request):
+    user = request.user
+    task_name = f"user-reading-task-{user.id}"
+
+    # Remove the user's periodic task
+    deleted, _ = PeriodicTask.objects.filter(name=task_name).delete()
+
+    if deleted:
+        return JsonResponse({"message": "Simulation stopped"}, status=200)
+    return JsonResponse({"message": "No simulation found"}, status=400)
+
+@login_required
+def simulation_status(request):
+    user = request.user
+    task_name = f"user-reading-task-{user.id}"
+
+    is_running = PeriodicTask.objects.filter(name=task_name).exists()
+    return JsonResponse({"running": is_running})

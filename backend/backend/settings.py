@@ -143,7 +143,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -153,17 +154,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 
+# !! DEPLOYMENT !!
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://0.0.0.0:8000",
+]
+
+CORS_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://0.0.0.0:8000",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Task scheduler
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_RESULT_BACKEND", "redis://localhost:6379/0")
-CELERY_BEAT_SCHEDULE = {
-    'generate-reading-every-5-minutes': {
-        'task': 'simulator.tasks.generate_reading',
-        'schedule': 300.0,  # 5 minutes
-        'args': (1,),  # default user_id (replace with actual)
-    },
-}
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("REDIS_RESULT_BACKEND", "redis://redis:6379/0")
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers.DatabaseScheduler"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

@@ -37,10 +37,20 @@ function App() {
     )
 }
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-    })
-}
+self.addEventListener("fetch", (event) => {
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+
+            // If navigation request fails, return index.html for React Router
+            if (event.request.mode === "navigate") {
+                return caches.match("/index.html");
+            }
+
+            return fetch(event.request);
+        })
+    );
+});
+
 
 export default App

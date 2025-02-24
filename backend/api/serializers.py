@@ -8,12 +8,11 @@ User = get_user_model()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    dob = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d"])
+
     class Meta:
         model = UserProfile
         fields = [
-            "first_name",
-            "last_name",
-            "email",
             "dob",
             "basal_rate",
             "correction_factor",
@@ -26,7 +25,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "iob",
             "cob",
             "max_iob",
-            "residual_iob",
             "diabetic_profile",
             "em_enabled",
             "carb_ratio",
@@ -44,11 +42,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "iob": {"default": 0.00},
             "cob": {"default": 0.00},
             "max_iob": {"default": 25.0},
-            "residual_iob": {"default": 0.0},
             "diabetic_profile": {"required": False},
             "em_enabled": {"default": False},
             "carb_ratio": {"default": 10.0},
-            "last_update_time": {"default": "1970-01-01 00:00:00", "read_only": True},
+            "last_update_time": {"read_only": True},
         }
 
     def create(self, validated_data):
@@ -60,12 +57,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "password", "profile"]
+        fields = ["username", "password", "first_name", "last_name", "email", "profile"]
         extra_kwargs = {
-            "password": {
-                "write_only": True
-            },  # Prevent password from being returned in responses
-            "email": {"required": True},  # Ensure email is mandatory
+            "password": {"write_only": True},
+            "email": {"required": True},
         }
 
     def create(self, validated_data):
@@ -81,7 +76,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop("profile", None)
-        instance.username = validated_data.get("username", instance.username)
+        instance.first_name = validated_data.get("first_name", instance.first_name)
+        instance.last_name = validated_data.get("last_name", instance.last_name)
         instance.email = validated_data.get("email", instance.email)
 
         if "password" in validated_data:
@@ -89,8 +85,10 @@ class UserSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        if profile_data:
-            UserProfile.objects.update_or_create(user=instance, defaults=profile_data)
+        # Update profile separately
+        profile = instance.profile
+        profile.dob = profile_data.get("dob", profile.dob)
+        profile.save()
 
         return instance
 

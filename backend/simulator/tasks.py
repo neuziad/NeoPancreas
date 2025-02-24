@@ -1,6 +1,7 @@
+from datetime import datetime
+import pytz
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from api.models import GlucoseReading
 from simglucose.simulation.env import T1DSimEnv
 from simglucose.patient.t1dpatient import T1DPatient
@@ -10,6 +11,8 @@ from simglucose.simulation.scenario_gen import RandomScenario
 from simglucose.controller.base import Action
 from decimal import Decimal, getcontext
 from celery import shared_task
+from django.contrib.sessions.models import Session
+from django.utils.timezone import now
 
 # Constants
 getcontext().prec = 3
@@ -43,17 +46,26 @@ def call_bolus(carbs_on_board):
 
 # Create a reading and apply the necessary insulin
 @shared_task
-def generate_reading(user_id):
-    try:
-        user = User.objects.get(id=user_id)
+def create_reading(*args, **kwargs):
+    # Get active sessions and extract user IDs
+    sessions = Session.objects.filter(expire_date__gte=now())
+    user_ids = [
+        s.get_decoded().get("_auth_user_id")
+        for s in sessions
+        if s.get_decoded().get("_auth_user_id")
+    ]
 
-        if user.is_authenticated:
+    users = User.objects.filter(id__in=user_ids)
+
+    for user in users:
+        print(f"Creating glucose reading for user {user.id}")
+        try:
             # Variables needed for simulation
             env = T1DSimEnv(
                 patient=T1DPatient.withName(user.profile.diabetic_profile),
-                sensor=CGMSensor.withName("Dexcom", seed=user_id),
-                pump=InsulinPump.withName("Insulet", seed=user_id),
-                scenario=RandomScenario(seed=user_id),
+                sensor=CGMSensor.withName("Dexcom"),
+                pump=InsulinPump.withName("Insulet"),
+                scenario=RandomScenario(start_time=datetime.now(), seed=user.id),
             )
 
             # Get observation if glucose readings exist
@@ -104,10 +116,8 @@ def generate_reading(user_id):
             set_bolus_called(False)
             set_carbs_on_board(0)
 
-            print(GlucoseReading.objects.filter(patient=user)[0])
-        else:
-            print(f"User with id {user_id} is not logged in or active.")
-        
-    except ObjectDoesNotExist:
-        print(f"User with id {user_id} not found.")
+            # Print results
+            print(f"New glucose reading for user {user.id}: {adjusted_read} mmol/L")
 
+        except Exception as e:
+            print(f"Error processing user {user.username}: {e}")

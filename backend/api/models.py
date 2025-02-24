@@ -18,9 +18,6 @@ class UserProfile(models.Model):
 
     # Personal details
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    email = models.EmailField(blank=True)
     dob = models.DateField(null=True, blank=True)
 
     # Store readings of user
@@ -38,15 +35,14 @@ class UserProfile(models.Model):
     iob = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
     cob = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
     max_iob = models.DecimalField(decimal_places=2, max_digits=4, default=25.0)
-    residual_iob = models.FloatField(default=0.0)
     em_enabled = models.BooleanField(default=False)
     diabetic_profile = models.CharField(
-        max_length=14, null=True, blank=True
-    )  # Simulation profile for simglucose
-    carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
-    last_update_time = models.DateTimeField(
-        default=datetime.min.strftime("%Y-%m-%d %H:%M:%S")
+        max_length=14,
+        null=True,
+        blank=True,  # Simulation profile for simglucose
     )
+    carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
+    last_update_time = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
         if not self.diabetic_profile:
@@ -56,10 +52,12 @@ class UserProfile(models.Model):
             age = current_year - year_of_birth
 
             # Generate a random number
-            random_number = str(random.randint(0, 9)).zfill(3)
+            random_number = str(random.randint(1, 9)).zfill(3)
 
             # Set diabetic_profile based on age
-            if age >= 18:
+            if age < 13:
+                self.diabetic_profile = f"child#{random_number}"
+            elif age >= 18:
                 self.diabetic_profile = f"adult#{random_number}"
             else:
                 self.diabetic_profile = f"adolescent#{random_number}"
