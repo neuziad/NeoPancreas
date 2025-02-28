@@ -1,9 +1,14 @@
 from django.urls import path
-from . import views
+from api.views import (
+    start_simulation,
+    stop_simulation,
+    simulation_status,
+)
 
 urlpatterns = [
-    path("glucose/", views.GlucoseListCreate.as_view(), name="glucose-list"),
-    path("start-simulation/", views.start_simulation, name="start_simulation"),
-    path("stop-simulation/", views.stop_simulation, name="stop_simulation"),
-    path("simulation-status/", views.simulation_status, name="simulation_status"),
+    path("start-simulation/<int:user_id>/", start_simulation, name="start_simulation"),
+    path("stop-simulation/<int:user_id>/", stop_simulation, name="stop_simulation"),
+    path(
+        "simulation-status/<int:user_id>/", simulation_status, name="simulation_status"
+    ),
 ]

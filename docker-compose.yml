@@ -11,7 +11,7 @@ services:
       - redis
     volumes:
       - ./backend:/app
-      - ./static:/app/static
+      - ./backend/staticfiles:/app/staticfiles
 
   frontend:
     build:

@@ -23,7 +23,9 @@ function Form({ route, method }) {
         e.preventDefault()
 
         // Format date of birth
-        const formattedDob = dob ? new Date(dob).toISOString().split('T')[0] : null
+        const formattedDob = dob
+            ? new Date(dob).toISOString().split('T')[0]
+            : null
 
         // Prepare data payload
         const payload = {
@@ -33,11 +35,11 @@ function Form({ route, method }) {
             last_name: lastName,
             email,
             profile: {
-                dob: formattedDob
+                dob: formattedDob,
             },
         }
-        
-        console.log("Submitting payload:", payload) // Debugging
+
+        // console.log('Submitting payload:', payload) // Debugging
 
         try {
             const res = await api.post(route, payload)
@@ -49,7 +51,7 @@ function Form({ route, method }) {
                 navigate('/login')
             }
         } catch (error) {
-            console.log("Error: ", error.response?.data)
+            console.log('Error: ', error.response?.data)
             alert(error.response ? error.response.data.detail : error.message)
         } finally {
             setLoading(false)

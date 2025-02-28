@@ -8,9 +8,10 @@ import math
 from decimal import Decimal, getcontext
 import numpy as np
 from simglucose.sensor.cgm import CGMSensor
-from simglucose.actuator.pump import InsulinPump
 
 getcontext().prec = 3
+
+EXERCISE_MODE_MODIFIER = 0.5
 
 
 class UserProfile(models.Model):
@@ -21,7 +22,9 @@ class UserProfile(models.Model):
     dob = models.DateField(null=True, blank=True)
 
     # Store readings of user
-    readings = models.ManyToManyField("GlucoseReading", blank=True)
+    readings = models.ManyToManyField(
+        "GlucoseReading", related_name="patients", blank=True
+    )
 
     # Diabetic parameters
     basal_rate = models.DecimalField(decimal_places=2, max_digits=4, default=1.2)
@@ -51,16 +54,15 @@ class UserProfile(models.Model):
             current_year = datetime.now().year
             age = current_year - year_of_birth
 
-            # Generate a random number
-            random_number = str(random.randint(1, 9)).zfill(3)
-
             # Set diabetic_profile based on age
-            if age < 13:
-                self.diabetic_profile = f"child#{random_number}"
+            if age < 18:
+                ValidationError(
+                    gettext_lazy(
+                        "This app is designed only for patients 18 years or older."
+                    )
+                )
             elif age >= 18:
-                self.diabetic_profile = f"adult#{random_number}"
-            else:
-                self.diabetic_profile = f"adolescent#{random_number}"
+                self.diabetic_profile = f"adult#{str(random.randint(1, 10)).zfill(3)}"
 
         super().save(*args, **kwargs)
 
@@ -130,6 +132,13 @@ class UserProfile(models.Model):
 
     ## Insulin and glucose calculations
     def update_iob(self):
+        """
+        Estimates the patient's insulin on board by adding past insulin doses and simulating insulin decay.
+
+        Returns:
+        - Updated patient's IOB (U)
+        """
+
         current_time = float(datetime.now().timestamp())
 
         # Initialize time tracking
@@ -203,18 +212,14 @@ class UserProfile(models.Model):
         }
         basal_per_step *= trend_multipliers.get(glucose_trend, 1.0)
 
-        # Reduce insulin if IOB is high (soft limit mechanism)
-        if self.iob > 3.0:
-            basal_per_step *= float(Decimal(1) / Decimal(self.iob))
-
-        # Apply exercise mode
+        # Apply exercise mode modifier
         if em_enabled:
-            basal_per_step *= 0.5
+            basal_per_step *= EXERCISE_MODE_MODIFIER
 
         # Ensure no negative insulin delivery
         basal_per_step = max(0, basal_per_step)
 
-        # Round to nearest 0.05 for insulin precision
+        # Round to nearest 0.05 for pump precision
         basal_per_step = round(basal_per_step / 0.05) * 0.05
 
         return basal_per_step
@@ -249,9 +254,9 @@ class UserProfile(models.Model):
         # Calculate correction dose and add to bolus value
         bolus_per_step += (current_glucose - target) / correction_factor
 
-        # Apply exercise mode
+        # Apply exercise mode modifier
         if em_enabled:
-            bolus_per_step *= 0.5
+            bolus_per_step *= EXERCISE_MODE_MODIFIER
 
         # Subtract insulin on board from bolus
         bolus_per_step -= iob
@@ -259,7 +264,7 @@ class UserProfile(models.Model):
         # Make sure value doesn't go negative or beyond the max bolus
         bolus_per_step = min(max(0, bolus_per_step), max_bolus)
 
-        # Round to nearest 0.05 for insulin precision
+        # Round to nearest 0.05 for pump precision
         bolus_per_step = round(bolus_per_step / 0.05) * 0.05
 
         return bolus_per_step
@@ -274,9 +279,7 @@ class UserProfile(models.Model):
 class GlucoseReading(models.Model):
     """Represents a single glucose reading with its metadata."""
 
-    patient = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="glucose_readings"
-    )
+    patient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="readings")
     timestamp = models.DateTimeField(auto_now_add=True)
     reading = models.FloatField()
     trend = models.CharField(max_length=6)
@@ -284,7 +287,7 @@ class GlucoseReading(models.Model):
     bolus_injected = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
 
     ## Glucose calculations
-    def adjust_for_noise(reading):
+    def adjust_for_noise(self, reading):
         """Computes the rolling average noise level from the CGM sensor and removes
         glucose readings based on noise levels per ISO standards. (ISO 15197:2013)"""
 

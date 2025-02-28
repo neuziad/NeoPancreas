@@ -5,8 +5,13 @@ import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import { stopSimulation } from './components/Simulations.jsx'
+import { useEffect } from 'react'
+import { jwtDecode } from 'jwt-decode'
+import { ACCESS_TOKEN } from './constants.js'
 
 function Logout() {
+    stopSimulation()
     localStorage.clear()
     return <Navigate to="/login" />
 }
@@ -17,6 +22,40 @@ function RegisterAndLogout() {
 }
 
 function App() {
+    useEffect(() => {
+        const handleUnload = () => {
+            try {
+                const token = localStorage.getItem(ACCESS_TOKEN)
+                if (!token) return
+
+                const decoded = jwtDecode(token)
+                const userId = decoded?.user_id
+                if (!userId) return
+
+                const url = `/api/stop-simulation/${userId}/`
+                const data = JSON.stringify({
+                    message: 'Stopping simulation before closing...',
+                })
+
+                // Use sendBeacon for reliability
+                const blob = new Blob([data], { type: 'application/json' })
+                navigator.sendBeacon(url, blob)
+            } catch (error) {
+                console.error('Error stopping simulation:', error)
+            }
+        }
+
+        // Attach events
+        window.addEventListener('unload', handleUnload)
+        window.addEventListener('pagehide', handleUnload)
+
+        // Cleanup function to remove listeners
+        return () => {
+            window.removeEventListener('unload', handleUnload)
+            window.removeEventListener('pagehide', handleUnload)
+        }
+    }, [])
+
     return (
         <BrowserRouter>
             <Routes>
@@ -37,20 +76,18 @@ function App() {
     )
 }
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) return cachedResponse;
+            if (cachedResponse) return cachedResponse
 
             // If navigation request fails, return index.html for React Router
-            if (event.request.mode === "navigate") {
-                return caches.match("/index.html");
-            }
+            if (event.request.mode === 'navigate')
+                return caches.match('/index.html')
 
-            return fetch(event.request);
+            return fetch(event.request)
         })
-    );
-});
-
+    )
+})
 
 export default App
