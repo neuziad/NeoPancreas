@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0009_alter_glucosereading_reading'),
+        ("api", "0009_alter_glucosereading_reading"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='userprofile',
-            name='last_update_time',
+            model_name="userprofile",
+            name="last_update_time",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]

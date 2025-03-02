@@ -3,7 +3,7 @@ from rest_framework import generics
 from .serializers import UserSerializer, GlucoseSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import GlucoseReading
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.http import JsonResponse
 import json
 from rest_framework.decorators import api_view
@@ -43,7 +43,7 @@ def start_simulation(request, user_id):
 
     # Ensure the user ID in the URL matches the authenticated user
     if user_from_token.id != user_id:
-        logger.warning(
+        logger.error(
             f"User ID mismatch: Token user {user_from_token.id} vs URL user {user_id}"
         )
         return JsonResponse({"message": "Invalid user ID"}, status=403)
@@ -54,15 +54,18 @@ def start_simulation(request, user_id):
     if PeriodicTask.objects.filter(name=task_name).exists():
         return JsonResponse({"message": "Simulation already running."}, status=400)
 
-    # Create an interval schedule for every 5 minutes
-    schedule, _ = IntervalSchedule.objects.get_or_create(
-        every=5,
-        period=IntervalSchedule.MINUTES,
+    # This schedule will trigger at minutes 0,5,10,15,... on every hour
+    schedule, _ = CrontabSchedule.objects.get_or_create(
+        minute="*/5",
+        hour="*",
+        day_of_week="*",
+        day_of_month="*",
+        month_of_year="*",
     )
 
     # Create the periodic task
     PeriodicTask.objects.create(
-        interval=schedule,
+        crontab=schedule,
         name=task_name,
         task="simulator.tasks.create_reading",
         args=json.dumps([user_id]),  # Pass user_id correctly to Celery task

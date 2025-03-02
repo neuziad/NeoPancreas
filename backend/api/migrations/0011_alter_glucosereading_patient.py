@@ -5,15 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0010_alter_userprofile_last_update_time'),
+        ("api", "0010_alter_userprofile_last_update_time"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='glucosereading',
-            name='patient',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='glucose_readings', to='api.userprofile'),
+            model_name="glucosereading",
+            name="patient",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="glucose_readings",
+                to="api.userprofile",
+            ),
         ),
     ]

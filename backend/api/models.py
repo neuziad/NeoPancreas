@@ -47,7 +47,7 @@ class UserProfile(models.Model):
         if not self.diabetic_profile:
             # Calculate the age from dob
             year_of_birth = self.dob.year
-            current_year= now().year
+            current_year = now().year
             age = current_year - year_of_birth
 
             # Set diabetic_profile based on age
@@ -162,8 +162,12 @@ class UserProfile(models.Model):
         # Add new insulin doeses
         self.iob += new_bolus
         if new_basal > 0:
-            basal_multiplier = Decimal(str(1 - math.exp(-elapsed_time / self.insulin_duration)))
-            basal_integral = new_basal * Decimal(self.insulin_duration) * basal_multiplier
+            basal_multiplier = Decimal(
+                str(1 - math.exp(-elapsed_time / self.insulin_duration))
+            )
+            basal_integral = (
+                new_basal * Decimal(self.insulin_duration) * basal_multiplier
+            )
             self.iob += basal_integral
 
         return self.iob
@@ -180,7 +184,9 @@ class UserProfile(models.Model):
 
         # Ensure current_glucose is a Decimal to avoid float-Decimal issues
         if qs.exists():
-            current_glucose = Decimal(str(qs.first().reading))  # Convert float to Decimal
+            current_glucose = Decimal(
+                str(qs.first().reading)
+            )  # Convert float to Decimal
             glucose_trend = qs.first().trend
         else:
             current_glucose = Decimal("0")
@@ -223,7 +229,9 @@ class UserProfile(models.Model):
         basal_per_step = max(Decimal("0"), basal_per_step)
 
         # Round to nearest 0.05 for pump precision
-        basal_per_step = (basal_per_step / Decimal("0.05")).quantize(Decimal("1")) * Decimal("0.05")
+        basal_per_step = (basal_per_step / Decimal("0.05")).quantize(
+            Decimal("1")
+        ) * Decimal("0.05")
 
         return basal_per_step
 
@@ -276,7 +284,9 @@ class UserProfile(models.Model):
         bolus_per_step = min(max(Decimal("0"), bolus_per_step), max_bolus)
 
         # Round to nearest 0.05 for pump precision
-        bolus_per_step = (bolus_per_step / Decimal("0.05")).quantize(Decimal("1")) * Decimal("0.05")
+        bolus_per_step = (bolus_per_step / Decimal("0.05")).quantize(
+            Decimal("1")
+        ) * Decimal("0.05")
 
         return bolus_per_step
 
@@ -290,7 +300,9 @@ class UserProfile(models.Model):
 class GlucoseReading(models.Model):
     """Represents a single glucose reading with its metadata."""
 
-    patient = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="glucose_readings")
+    patient = models.ForeignKey(
+        UserProfile, on_delete=models.CASCADE, related_name="glucose_readings"
+    )
     timestamp = models.DateTimeField(auto_now_add=True)
     reading = models.FloatField()
     trend = models.CharField(max_length=6)

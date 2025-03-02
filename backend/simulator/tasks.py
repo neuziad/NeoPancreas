@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
@@ -52,7 +53,9 @@ def create_reading(*args):
             patient=T1DPatient.withName(user.profile.diabetic_profile),
             sensor=CGMSensor.withName("Dexcom"),
             pump=InsulinPump.withName("Insulet"),
-            scenario=RandomScenario(start_time=timezone.now().replace(tzinfo=None), seed=user_id),
+            scenario=RandomScenario(
+                start_time=timezone.now().replace(tzinfo=None), seed=user_id
+            ),
         )
 
         # Check if previous readings exist
@@ -70,31 +73,64 @@ def create_reading(*args):
         # Run the insulin doses through the simulator
         obs = env.step(Action(basal=basal_dose, bolus=bolus_dose)).observation
 
-        # Create empty GlucoseReading object
-        new_reading = GlucoseReading(patient=user.profile)
-
-        # Process glucose reading
+        # Process the new glucose reading
         try:
-            reading = float(obs[0]) / 18     # Convert mg/dL to mmol/L
+            reading_value = float(obs[0]) / 18  # Convert mg/dL to mmol/L
         except Exception as e:
-            logger.error(f"Error processing glucose reading, user may not be authenticated properly.")
-        new_reading.reading = float(new_reading.adjust_for_noise(reading))
+            # Weirdly enough, if a user isn't logged in properly, simglucose won't thrown an exception
+            # Instead, it will return a Decimal, which can't be divided with the float number of 18
+            # A strange error but at least we know why it happens
+            logger.error(
+                "Error processing glucose reading, user may not be authenticated properly."
+            )
+            return
 
+        # Determine the current time and calculate the 5-minute block
+        current_time = timezone.now()
+        block_start = current_time.replace(second=0, microsecond=0)
+
+        # Round down to the nearest 5-minute mark:
+        block_start = block_start - timedelta(minutes=(block_start.minute % 5))
+
+        # Look for an existing reading in the last 24 hours with the same hour and minute as block_start
+        existing_reading = user.profile.glucose_readings.filter(
+            timestamp__gte=current_time - timedelta(hours=24),
+            timestamp__hour=block_start.hour,
+            timestamp__minute=block_start.minute,
+        ).last()
+
+        # If previous reading at same time exists, replace it, if not, create new reading
+        if existing_reading:
+            new_reading = existing_reading
+        else:
+            new_reading = GlucoseReading(patient=user.profile)
+
+        # Update the reading’s data.
+        new_reading.reading = float(new_reading.adjust_for_noise(reading_value))
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
-
         new_reading.basal_injected = Decimal(user.profile.titrate_basal())
         new_reading.bolus_injected = Decimal(
             user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0
         )
 
+        # Update the user's IOB before saving
         user.profile.update_iob()
 
-        # Save new reading
+        # Update the timestamp to the current time so that it reflects today's reading
+        new_reading.timestamp = current_time
         new_reading.save()
-        user.profile.glucose_readings.add(new_reading)
 
-        # Reset variables
+        # If new record, add it to the profile
+        if not existing_reading:
+            user.profile.glucose_readings.add(new_reading)
+
+        # Purge readings older than 24 hours
+        GlucoseReading.objects.filter(
+            timestamp__lt=current_time - timedelta(hours=24)
+        ).delete()
+
+        # Reset bolus variables
         set_bolus_called(False)
         set_carbs_on_board(0)
 
