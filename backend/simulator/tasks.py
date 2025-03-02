@@ -1,5 +1,4 @@
-from datetime import datetime
-from rest_framework_simplejwt.tokens import AccessToken
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from api.models import GlucoseReading
@@ -11,8 +10,6 @@ from simglucose.simulation.scenario_gen import RandomScenario
 from simglucose.controller.base import Action
 from decimal import Decimal, getcontext
 from celery import shared_task
-from django.contrib.sessions.models import Session
-from django.utils.timezone import now
 import logging
 
 # Constants
@@ -47,7 +44,7 @@ def call_bolus(carbs_on_board):
 def create_reading(*args):
     try:
         # Get the user from the database
-        user_id = args[0]
+        user_id = int(args[0])
         user = User.objects.get(id=user_id)
 
         # Initialize simulation environment
@@ -55,42 +52,47 @@ def create_reading(*args):
             patient=T1DPatient.withName(user.profile.diabetic_profile),
             sensor=CGMSensor.withName("Dexcom"),
             pump=InsulinPump.withName("Insulet"),
-            scenario=RandomScenario(start_time=datetime.now(), seed=user.id),
+            scenario=RandomScenario(start_time=timezone.now().replace(tzinfo=None), seed=user_id),
         )
 
         # Check if previous readings exist
-        latest_reading = user.profile.readings.last()
+        latest_reading = user.profile.glucose_readings.all().last()
 
         if latest_reading:
             # Use actual past insulin doses if available
-            basal_dose = Decimal(latest_reading.basal_injected)
-            bolus_dose = Decimal(latest_reading.bolus_injected)
+            basal_dose = float(latest_reading.basal_injected)
+            bolus_dose = float(latest_reading.bolus_injected)
         else:
             # No previous readings - use default values
-            basal_dose = Decimal(0)
-            bolus_dose = Decimal(0)
+            basal_dose = 0
+            bolus_dose = 0
 
         # Run the insulin doses through the simulator
         obs = env.step(Action(basal=basal_dose, bolus=bolus_dose)).observation
 
         # Create empty GlucoseReading object
-        new_reading = GlucoseReading(patient=user)
+        new_reading = GlucoseReading(patient=user.profile)
 
         # Process glucose reading
-        reading = float(obs[0]) / 18  # Convert mg/dL to mmol/L
-        new_reading.reading = new_reading.adjust_for_noise(reading)
+        try:
+            reading = float(obs[0]) / 18     # Convert mg/dL to mmol/L
+        except Exception as e:
+            logger.error(f"Error processing glucose reading, user may not be authenticated properly.")
+        new_reading.reading = float(new_reading.adjust_for_noise(reading))
 
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
 
-        new_reading.basal_injected = user.profile.titrate_basal()
-        new_reading.bolus_injected = (
-            user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0.00
+        new_reading.basal_injected = Decimal(user.profile.titrate_basal())
+        new_reading.bolus_injected = Decimal(
+            user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0
         )
+
+        user.profile.update_iob()
 
         # Save new reading
         new_reading.save()
-        user.profile.readings.add(new_reading)
+        user.profile.glucose_readings.add(new_reading)
 
         # Reset variables
         set_bolus_called(False)

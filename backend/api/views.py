@@ -6,15 +6,8 @@ from .models import GlucoseReading
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from django.http import JsonResponse
 import json
-from rest_framework.decorators import (
-    api_view,
-    authentication_classes,
-    permission_classes,
-)
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 import logging
-import sys
 
 logger = logging.getLogger(__name__)
 

@@ -1,17 +1,18 @@
-from datetime import datetime
 import random
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy
 import math
-from decimal import Decimal, getcontext
 import numpy as np
 from simglucose.sensor.cgm import CGMSensor
+from django.utils.timezone import now
+from datetime import timedelta
+from decimal import Decimal, getcontext
 
+# Constants
 getcontext().prec = 3
-
-EXERCISE_MODE_MODIFIER = 0.5
+EXERCISE_MODE_MODIFIER = 0.75
 
 
 class UserProfile(models.Model):
@@ -20,11 +21,6 @@ class UserProfile(models.Model):
     # Personal details
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     dob = models.DateField(null=True, blank=True)
-
-    # Store readings of user
-    readings = models.ManyToManyField(
-        "GlucoseReading", related_name="patients", blank=True
-    )
 
     # Diabetic parameters
     basal_rate = models.DecimalField(decimal_places=2, max_digits=4, default=1.2)
@@ -45,13 +41,13 @@ class UserProfile(models.Model):
         blank=True,  # Simulation profile for simglucose
     )
     carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
-    last_update_time = models.DateTimeField(auto_now=True)
+    last_update_time = models.DateTimeField(default=now)
 
     def save(self, *args, **kwargs):
         if not self.diabetic_profile:
             # Calculate the age from dob
             year_of_birth = self.dob.year
-            current_year = datetime.now().year
+            current_year= now().year
             age = current_year - year_of_birth
 
             # Set diabetic_profile based on age
@@ -139,7 +135,7 @@ class UserProfile(models.Model):
         - Updated patient's IOB (U)
         """
 
-        current_time = float(datetime.now().timestamp())
+        current_time = now()
 
         # Initialize time tracking
         if self.last_update_time is None:
@@ -151,24 +147,23 @@ class UserProfile(models.Model):
 
         # Decay existing IOB
         if self.iob > 0:
-            decay_factor = math.exp(-elapsed_time / self.insulin_duration)
+            decay_factor = Decimal(str(math.exp(-elapsed_time / self.insulin_duration)))
             self.iob *= decay_factor
             # self.iob = round(self.iob / 0.05) * 0.05
 
         # Process new insulin doses
-        new_bolus = 0.0
-        new_basal = 0.0
-        for reading in self.readings:
-            if reading.timestamp > (current_time - 5 * 60):
+        new_bolus = Decimal("0.0")
+        new_basal = Decimal("0.0")
+        for reading in self.glucose_readings.all():
+            if reading.timestamp > (current_time - timedelta(minutes=5)):
                 new_bolus += reading.bolus_injected
                 new_basal += reading.basal_injected
 
         # Add new insulin doeses
         self.iob += new_bolus
         if new_basal > 0:
-            basal_integral = (new_basal * self.insulin_duration) * (
-                1 - math.exp(-elapsed_time / self.insulin_duration)
-            )
+            basal_multiplier = Decimal(str(1 - math.exp(-elapsed_time / self.insulin_duration)))
+            basal_integral = new_basal * Decimal(self.insulin_duration) * basal_multiplier
             self.iob += basal_integral
 
         return self.iob
@@ -181,46 +176,54 @@ class UserProfile(models.Model):
         - Adjusted basal insulin dose for the next step (U)
         """
 
-        current_glucose = self.readings[0].reading if self.readings else 0
+        qs = self.glucose_readings.all()
+
+        # Ensure current_glucose is a Decimal to avoid float-Decimal issues
+        if qs.exists():
+            current_glucose = Decimal(str(qs.first().reading))  # Convert float to Decimal
+            glucose_trend = qs.first().trend
+        else:
+            current_glucose = Decimal("0")
+            glucose_trend = "NODATA"
+
         target = self.glucose_target
         min_gl = self.glucose_min
-        glucose_trend = self.readings[0].trend if self.readings else "NODATA"
         correction_factor = self.correction_factor
         em_enabled = self.em_enabled
 
         # If full basal rate equivalent is already delivered, or glucose too low, stop basal delivery
         if self.iob > self.basal_rate or current_glucose < min_gl:
-            return 0
+            return Decimal("0")
 
-        # Convert basal rate to per-step insulin dose
-        basal_per_step = self.basal_rate / 12
+        # Convert basal rate to per-step insulin dose (Decimal division)
+        basal_per_step = self.basal_rate / Decimal("12")
 
-        # Calculate correction dose
-        correction_dose = (current_glucose - target) / correction_factor / 12
+        # Calculate correction dose with Decimal conversion
+        correction_dose = (current_glucose - target) / correction_factor / Decimal("12")
         basal_per_step += correction_dose
 
         # Adjust further based on glucose trend
         trend_multipliers = {
-            "↑↑": 1.25,
-            "↑": 1,
-            "↗": 0.75,
-            "→": 0.5,
-            "↘": 0.1,
-            "↓": 0,
-            "↓↓": 0,
-            "NODATA": 0,
+            "↑↑": Decimal("1.25"),
+            "↑": Decimal("1"),
+            "↗": Decimal("0.75"),
+            "→": Decimal("0.5"),
+            "↘": Decimal("0.1"),
+            "↓": Decimal("0"),
+            "↓↓": Decimal("0"),
+            "NODATA": Decimal("0"),
         }
-        basal_per_step *= trend_multipliers.get(glucose_trend, 1.0)
+        basal_per_step *= trend_multipliers.get(glucose_trend, Decimal("1.0"))
 
         # Apply exercise mode modifier
         if em_enabled:
-            basal_per_step *= EXERCISE_MODE_MODIFIER
+            basal_per_step *= Decimal(str(EXERCISE_MODE_MODIFIER))
 
         # Ensure no negative insulin delivery
-        basal_per_step = max(0, basal_per_step)
+        basal_per_step = max(Decimal("0"), basal_per_step)
 
         # Round to nearest 0.05 for pump precision
-        basal_per_step = round(basal_per_step / 0.05) * 0.05
+        basal_per_step = (basal_per_step / Decimal("0.05")).quantize(Decimal("1")) * Decimal("0.05")
 
         return basal_per_step
 
@@ -235,7 +238,15 @@ class UserProfile(models.Model):
         - Adjusted bolus insulin dose for the next step (U)
         """
 
-        current_glucose = self.readings[0].reading if self.readings else 0
+        # Convert carbs to decimal
+        carbs = Decimal(str(carbs))
+
+        # Get current glucose reading as a Decimal
+        if self.glucose_readings.exists():
+            current_glucose = Decimal(str(self.glucose_readings.all().first().reading))
+        else:
+            current_glucose = Decimal("0")
+
         carb_ratio = self.carb_ratio
         correction_factor = self.correction_factor
         target = self.glucose_target
@@ -246,7 +257,7 @@ class UserProfile(models.Model):
 
         # No bolus when blood glucose is below minimum
         if current_glucose < min_gl:
-            return 0
+            return Decimal("0")
 
         # Calculate initial bolus value from carbs
         bolus_per_step = carbs / carb_ratio
@@ -256,16 +267,16 @@ class UserProfile(models.Model):
 
         # Apply exercise mode modifier
         if em_enabled:
-            bolus_per_step *= EXERCISE_MODE_MODIFIER
+            bolus_per_step *= Decimal(str(EXERCISE_MODE_MODIFIER))
 
         # Subtract insulin on board from bolus
         bolus_per_step -= iob
 
         # Make sure value doesn't go negative or beyond the max bolus
-        bolus_per_step = min(max(0, bolus_per_step), max_bolus)
+        bolus_per_step = min(max(Decimal("0"), bolus_per_step), max_bolus)
 
         # Round to nearest 0.05 for pump precision
-        bolus_per_step = round(bolus_per_step / 0.05) * 0.05
+        bolus_per_step = (bolus_per_step / Decimal("0.05")).quantize(Decimal("1")) * Decimal("0.05")
 
         return bolus_per_step
 
@@ -279,7 +290,7 @@ class UserProfile(models.Model):
 class GlucoseReading(models.Model):
     """Represents a single glucose reading with its metadata."""
 
-    patient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="readings")
+    patient = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="glucose_readings")
     timestamp = models.DateTimeField(auto_now_add=True)
     reading = models.FloatField()
     trend = models.CharField(max_length=6)
@@ -305,17 +316,19 @@ class GlucoseReading(models.Model):
 
     def calculate_trend(self):
         """Calculates the trend based on glucose levels over 15 minutes."""
-        if len(self.patient.readings) < 3:
+        qs = self.patient.glucose_readings.all()
+        if qs.count() < 3:
             return 0
 
-        past_bg = self.patient.readings[0].reading
-        current_bg = self.atient.readings[-1].reading
+        past_bg = qs.first().reading
+        current_bg = qs.last().reading
         return (current_bg - past_bg) / 3
 
     def detect_trend_alert(self, trend_rate):
         """Detects significant glucose changes and issues alerts."""
-        if len(self.patient.readings) < 3:
-            trend_alert = "NODATA"
+        qs = self.patient.glucose_readings.all()
+        if qs.count() < 3:
+            return "NODATA"
         else:
             # Assign trend category based on Dexcom G7 criteria
             if abs(trend_rate) < 0.0555:
@@ -327,7 +340,7 @@ class GlucoseReading(models.Model):
             else:
                 trend_alert = "↑↑" if trend_rate > 0 else "↓↓"
 
-            if self.patient.readings[0] == 0:
+            if qs[0].reading == 0:
                 trend_alert = "NODATA"
 
         return trend_alert
