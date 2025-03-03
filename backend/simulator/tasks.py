@@ -48,7 +48,7 @@ def create_reading(*args):
         user_id = int(args[0])
         user = User.objects.get(id=user_id)
 
-        # Initialize simulation environment
+        # Initialise simulation environment
         env = T1DSimEnv(
             patient=T1DPatient.withName(user.profile.diabetic_profile),
             sensor=CGMSensor.withName("Dexcom"),
@@ -78,8 +78,8 @@ def create_reading(*args):
             reading_value = float(obs[0]) / 18  # Convert mg/dL to mmol/L
         except Exception as e:
             # Weirdly enough, if a user isn't logged in properly, simglucose won't thrown an exception
-            # Instead, it will return a Decimal, which can't be divided with the float number of 18
-            # A strange error but at least we know why it happens
+            # Instead, it will return a Decimal, which can't be divided with the float number 18
+            # A strange error but at least we know why it may happen
             logger.error(
                 "Error processing glucose reading, user may not be authenticated properly."
             )
@@ -105,7 +105,7 @@ def create_reading(*args):
         else:
             new_reading = GlucoseReading(patient=user.profile)
 
-        # Update the reading’s data.
+        # Update reading data
         new_reading.reading = float(new_reading.adjust_for_noise(reading_value))
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
@@ -130,13 +130,15 @@ def create_reading(*args):
             timestamp__lt=current_time - timedelta(hours=24)
         ).delete()
 
+        # Update user's last update time
+        user.profile.last_update_time = current_time
+        user.profile.save()
+
         # Reset bolus variables
         set_bolus_called(False)
         set_carbs_on_board(0)
 
-        logger.info(
-            f"New glucose reading for user {user.id}: {new_reading.reading} mmol/L"
-        )
+        logger.info(f"{user.profile}\n{new_reading}")
 
     except User.DoesNotExist:
         logger.error(f"User with ID {user_id} not found.")

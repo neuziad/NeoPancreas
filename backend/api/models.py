@@ -9,9 +9,11 @@ from simglucose.sensor.cgm import CGMSensor
 from django.utils.timezone import now
 from datetime import timedelta
 from decimal import Decimal, getcontext
+import logging
 
 # Constants
 getcontext().prec = 3
+logger = logging.getLogger(__name__)
 EXERCISE_MODE_MODIFIER = 0.75
 
 
@@ -23,17 +25,17 @@ class UserProfile(models.Model):
     dob = models.DateField(null=True, blank=True)
 
     # Diabetic parameters
-    basal_rate = models.DecimalField(decimal_places=2, max_digits=4, default=1.2)
+    basal_rate = models.DecimalField(decimal_places=2, max_digits=5, default=1.2)
     correction_factor = models.DecimalField(decimal_places=1, max_digits=3, default=1.0)
-    glucose_target = models.DecimalField(decimal_places=1, max_digits=3, default=6.4)
-    glucose_min = models.DecimalField(decimal_places=1, max_digits=3, default=3.9)
-    glucose_max = models.DecimalField(decimal_places=1, max_digits=3, default=11.0)
-    bolus_max = models.DecimalField(decimal_places=2, max_digits=4, default=15.00)
-    carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
+    glucose_target = models.DecimalField(decimal_places=1, max_digits=4, default=6.4)
+    glucose_min = models.DecimalField(decimal_places=1, max_digits=4, default=3.9)
+    glucose_max = models.DecimalField(decimal_places=1, max_digits=5, default=11.0)
+    bolus_max = models.DecimalField(decimal_places=2, max_digits=5, default=15.00)
+    carb_ratio = models.DecimalField(decimal_places=1, max_digits=4, default=10.0)
     insulin_duration = models.IntegerField(default=240)
-    iob = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
-    cob = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
-    max_iob = models.DecimalField(decimal_places=2, max_digits=4, default=25.0)
+    iob = models.DecimalField(decimal_places=2, max_digits=5, default=0.00)
+    cob = models.DecimalField(decimal_places=2, max_digits=5, default=0.00)
+    max_iob = models.DecimalField(decimal_places=2, max_digits=5, default=25.0)
     em_enabled = models.BooleanField(default=False)
     diabetic_profile = models.CharField(
         max_length=14,
@@ -59,8 +61,28 @@ class UserProfile(models.Model):
                 )
             elif age >= 18:
                 self.diabetic_profile = f"adult#{str(random.randint(1, 10)).zfill(3)}"
+                logger.info("New user's diabetic profile set to: %s", self.diabetic_profile)
+            
+            self.clean()
 
         super().save(*args, **kwargs)
+
+    def delete(self, using=..., keep_parents=...):
+        return super().delete(using, keep_parents)
+
+    def clean(self):
+        self.validate_basal_rate(self.basal_rate)
+        self.validate_correction_factor(self.correction_factor)
+        self.validate_glucose_target(self.glucose_target)
+        self.validate_glucose_min(self.glucose_min)
+        self.validate_glucose_max(self.glucose_max)
+        self.validate_bolus_max(self.bolus_max)
+        self.validate_carb_ratio(self.carb_ratio)
+        self.validate_insulin_duration(self.insulin_duration)
+        self.validate_max_iob(self.max_iob)
+
+    def __str__(self):
+        return f"PROFILE>> {self.user.username}"
 
     ## DATA VALIDATORS
     def validate_basal_rate(self, value):
@@ -126,7 +148,7 @@ class UserProfile(models.Model):
                 params={"value": value},
             )
 
-    ## Insulin and glucose calculations
+    ## DIABETIC ALGORITHMS
     def update_iob(self):
         """
         Estimates the patient's insulin on board by adding past insulin doses and simulating insulin decay.
@@ -142,7 +164,7 @@ class UserProfile(models.Model):
             self.last_update_time = current_time
 
         # Compute time elapsed since last update
-        elapsed_time = (current_time - self.last_update_time) / 60
+        elapsed_time = (current_time - self.last_update_time).total_seconds() / 60
         self.last_update_time = current_time
 
         # Decay existing IOB
@@ -182,19 +204,17 @@ class UserProfile(models.Model):
 
         qs = self.glucose_readings.all()
 
-        # Ensure current_glucose is a Decimal to avoid float-Decimal issues
+        # Ensure current glucose is a Decimal to avoid float-Decimal issues
         if qs.exists():
-            current_glucose = Decimal(
-                str(qs.first().reading)
-            )  # Convert float to Decimal
+            current_glucose = Decimal(str(qs.first().reading))
             glucose_trend = qs.first().trend
         else:
             current_glucose = Decimal("0")
             glucose_trend = "NODATA"
 
-        target = self.glucose_target
-        min_gl = self.glucose_min
-        correction_factor = self.correction_factor
+        target = Decimal(str(self.glucose_target))
+        min_gl = Decimal(str(self.glucose_min))
+        correction_factor = Decimal(str(self.correction_factor))
         em_enabled = self.em_enabled
 
         # If full basal rate equivalent is already delivered, or glucose too low, stop basal delivery
@@ -202,7 +222,7 @@ class UserProfile(models.Model):
             return Decimal("0")
 
         # Convert basal rate to per-step insulin dose (Decimal division)
-        basal_per_step = self.basal_rate / Decimal("12")
+        basal_per_step = Decimal(str(self.basal_rate)) / Decimal("12")
 
         # Calculate correction dose with Decimal conversion
         correction_dose = (current_glucose - target) / correction_factor / Decimal("12")
@@ -255,12 +275,12 @@ class UserProfile(models.Model):
         else:
             current_glucose = Decimal("0")
 
-        carb_ratio = self.carb_ratio
-        correction_factor = self.correction_factor
-        target = self.glucose_target
-        min_gl = self.glucose_min
-        iob = self.iob
-        max_bolus = self.bolus_max
+        carb_ratio = Decimal(str(self.carb_ratio))
+        correction_factor = Decimal(str(self.correction_factor))
+        target = Decimal(str(self.glucose_target))
+        min_gl = Decimal(str(self.glucose_min))
+        iob = Decimal(str(self.iob))
+        max_bolus = Decimal(str(self.bolus_max))
         em_enabled = self.em_enabled
 
         # No bolus when blood glucose is below minimum
@@ -268,7 +288,7 @@ class UserProfile(models.Model):
             return Decimal("0")
 
         # Calculate initial bolus value from carbs
-        bolus_per_step = carbs / carb_ratio
+        bolus_per_step = Decimal(str(carbs)) / Decimal(str(carb_ratio))
 
         # Calculate correction dose and add to bolus value
         bolus_per_step += (current_glucose - target) / correction_factor
@@ -289,12 +309,6 @@ class UserProfile(models.Model):
         ) * Decimal("0.05")
 
         return bolus_per_step
-
-    def delete(self, using=..., keep_parents=...):
-        return super().delete(using, keep_parents)
-
-    def __str__(self):
-        return f"PROFILE>> {self.user.username}"
 
 
 class GlucoseReading(models.Model):

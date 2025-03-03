@@ -11,12 +11,15 @@
         "prettier:format": "prettier --write ."
     },
     "dependencies": {
+        "@octokit/request": "^9.2.2",
         "axios": "^1.7.9",
         "jwt-decode": "^4.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-responsive": "^10.0.0",
-        "react-router-dom": "^7.1.5"
+        "react-router-dom": "^7.1.5",
+        "recharts": "^2.15.1",
+        "socket.io-client": "^4.8.1"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",

@@ -12,21 +12,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class GlucoseListCreate(generics.ListCreateAPIView):
-    serializer_class = GlucoseSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return GlucoseReading.objects.filter(author=user)
-
-    def perform_create(self, serializer):
-        if serializer.is_valid():
-            serializer.save(patient=self.request.user)
-        else:
-            print(serializer.errors)
-
-
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -43,9 +28,6 @@ def start_simulation(request, user_id):
 
     # Ensure the user ID in the URL matches the authenticated user
     if user_from_token.id != user_id:
-        logger.error(
-            f"User ID mismatch: Token user {user_from_token.id} vs URL user {user_id}"
-        )
         return JsonResponse({"message": "Invalid user ID"}, status=403)
 
     task_name = f"user-reading-task-{user_id}"
