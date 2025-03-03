@@ -35,7 +35,9 @@ class SimulatorTests(TestCase):
     @patch("simulator.tasks.T1DSimEnv")
     @patch("simulator.tasks.GlucoseReading")
     @patch("api.models.GlucoseReading.adjust_for_noise")
-    def test_create_reading_creates_new_reading(self, mock_adjust_for_noise, MockGlucoseReading, MockT1DSimEnv):
+    def test_create_reading_creates_new_reading(
+        self, mock_adjust_for_noise, MockGlucoseReading, MockT1DSimEnv
+    ):
         """Test that a new glucose reading is created correctly."""
         mock_env = MockT1DSimEnv.return_value
         mock_env.step.return_value.observation = [180.0]  # mg/dL (converted to mmol/L)
@@ -54,18 +56,25 @@ class SimulatorTests(TestCase):
 
     @patch("simulator.tasks.T1DSimEnv")
     @patch("simulator.tasks.GlucoseReading")
-    def test_create_reading_updates_existing_reading(self, MockGlucoseReading, MockT1DSimEnv):
+    def test_create_reading_updates_existing_reading(
+        self, MockGlucoseReading, MockT1DSimEnv
+    ):
         """Test that an existing reading is updated instead of creating a new one."""
         mock_env = MockT1DSimEnv.return_value
         mock_env.step.return_value.observation = [144.0]  # mg/dL (converted to mmol/L)
 
         existing_reading = MagicMock()
-        MockGlucoseReading.objects.filter.return_value.last.return_value = existing_reading
+        MockGlucoseReading.objects.filter.return_value.last.return_value = (
+            existing_reading
+        )
 
         create_reading(self.user.id)
 
         # Ensure the existing reading was updated
-        self.assertEqual(MockGlucoseReading.objects.filter.return_value.last.return_value.reading, 8.0)  # 144 mg/dL → 8 mmol/L
+        self.assertEqual(
+            MockGlucoseReading.objects.filter.return_value.last.return_value.reading,
+            8.0,
+        )  # 144 mg/dL → 8 mmol/L
         existing_reading.save.assert_called_once()
 
     @patch("simulator.tasks.GlucoseReading.objects.filter")
@@ -75,12 +84,15 @@ class SimulatorTests(TestCase):
         actual_timestamp = mock_filter.call_args[1]["timestamp__lt"]
         expected_timestamp = timezone.now() - timedelta(hours=24)
 
-        self.assertAlmostEqual(actual_timestamp.timestamp(), expected_timestamp.timestamp(), delta=2)
-
+        self.assertAlmostEqual(
+            actual_timestamp.timestamp(), expected_timestamp.timestamp(), delta=2
+        )
 
     @patch("simulator.tasks.T1DSimEnv")
     @patch("simulator.tasks.GlucoseReading")
-    def test_create_reading_applies_insulin_doses(self, MockGlucoseReading, MockT1DSimEnv):
+    def test_create_reading_applies_insulin_doses(
+        self, MockGlucoseReading, MockT1DSimEnv
+    ):
         """Test that basal and bolus insulin doses are properly applied."""
         mock_env = MockT1DSimEnv.return_value
         mock_env.step.return_value.observation = [144.0]  # mg/dL

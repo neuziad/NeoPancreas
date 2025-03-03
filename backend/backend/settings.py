@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -113,6 +114,18 @@ DATABASES = {
     )
 }
 
+# ASGI application
+ASGI_APPLICATION = "backend.asgi.application"
+
+# Redis backend for real-time communication
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # Ensure Redis is running
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

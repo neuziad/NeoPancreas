@@ -19,3 +19,6 @@ redis
 gunicorn
 whitenoise
 coverage
+channels
+daphne
+channels-redis

@@ -1,3 +1,4 @@
+from asgiref.sync import async_to_sync
 import random
 from django.db import models
 from django.contrib.auth.models import User
@@ -10,6 +11,9 @@ from django.utils.timezone import now
 from datetime import timedelta
 from decimal import Decimal, getcontext
 import logging
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from channels.layers import get_channel_layer
 
 # Constants
 getcontext().prec = 3
@@ -61,8 +65,10 @@ class UserProfile(models.Model):
                 )
             elif age >= 18:
                 self.diabetic_profile = f"adult#{str(random.randint(1, 10)).zfill(3)}"
-                logger.info("New user's diabetic profile set to: %s", self.diabetic_profile)
-            
+                logger.info(
+                    "New user's diabetic profile set to: %s", self.diabetic_profile
+                )
+
             self.clean()
 
         super().save(*args, **kwargs)
@@ -376,3 +382,20 @@ class GlucoseReading(models.Model):
 
     def __str__(self):
         return f"GLUCOSE>> [{self.timestamp}] | {self.reading:.1f} mmoL/L | {self.trend} | {self.basal_injected:.2f} U Basal | {self.bolus_injected:.2f} U Bolus"
+
+
+@receiver(post_save, sender=GlucoseReading)
+def send_new_glucose_reading(sender, instance, created, **kwargs):
+    """Broadcast new glucose reading via WebSocket"""
+    if created:
+        channel_layer = get_channel_layer()
+        data = {
+            "timestamp": instance.timestamp.strftime("%H:%M"),
+            "glucose": instance.reading,
+        }
+
+        # Send message to WebSocket using async_to_sync
+        async_to_sync(channel_layer.group_send)(
+            f"user_{instance.patient.user.id}",
+            {"type": "send_glucose_reading", "reading": data},
+        )

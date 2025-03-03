@@ -1,15 +1,72 @@
 from django.contrib.auth.models import User
 from rest_framework import generics
-from .serializers import UserSerializer, GlucoseSerializer
+from .serializers import UserProfileSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import GlucoseReading
+from .models import GlucoseReading, UserProfile
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.http import JsonResponse
 import json
 from rest_framework.decorators import api_view
 import logging
+from django.utils.timezone import now, timedelta
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 logger = logging.getLogger(__name__)
+
+
+class GlucoseReadingList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Fetch glucose readings for the authenticated user."""
+        logger.info("Headers received:", request.headers)
+        user = request.user  # Get the authenticated user from JWT token
+
+        # Retrieve time range from query parameters (default to 4 hours)
+        timespan = request.query_params.get("timespan", 4)
+
+        try:
+            timespan = int(timespan)
+        except ValueError:
+            return Response(
+                {"error": "Invalid timespan"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Calculate start time
+        start_time = now() - timedelta(hours=timespan)
+
+        # Filter readings for the authenticated user only
+        readings = GlucoseReading.objects.filter(
+            patient=user.profile, timestamp__gte=start_time
+        ).order_by("timestamp")
+
+        # Serialize and return the data
+        data = [
+            {"timestamp": r.timestamp.strftime("%H:%M"), "glucose": r.reading}
+            for r in readings
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Retrieve the authenticated user's profile data"""
+        try:
+            user = request.user
+            user_profile = UserProfile.objects.get(user=user)
+            serializer = UserProfileSerializer(user_profile)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class RegisterUserView(generics.CreateAPIView):
@@ -103,3 +160,21 @@ def simulation_status(request, user_id):
 
     is_running = PeriodicTask.objects.filter(name=task_name).exists()
     return JsonResponse({"running": is_running})
+
+
+@api_view(["GET"])
+def get_glucose_readings(request):
+    """Fetch glucose readings for the logged-in user within a time range"""
+    user = request.user
+    timespan = int(request.GET.get("timespan", 4))  # Default to 4 hours
+    start_time = now() - timedelta(hours=timespan)
+
+    readings = GlucoseReading.objects.filter(
+        user=user, timestamp__gte=start_time
+    ).order_by("timestamp")
+    data = [
+        {"timestamp": r.timestamp.strftime("%H:%M"), "glucose": r.value}
+        for r in readings
+    ]
+
+    return Response(data)
