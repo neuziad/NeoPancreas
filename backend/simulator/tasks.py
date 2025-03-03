@@ -1,5 +1,7 @@
+from datetime import timedelta
+from django.utils import timezone
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-import numpy as np
 from api.models import GlucoseReading
 from simglucose.simulation.env import T1DSimEnv
 from simglucose.patient.t1dpatient import T1DPatient
@@ -8,13 +10,13 @@ from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
 from simglucose.controller.base import Action
 from decimal import Decimal, getcontext
+from celery import shared_task
+import logging
 
 # Constants
 getcontext().prec = 3
-
-# Variables storing injection data
-basal_injected = 0.00
-bolus_injected = 0.00
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
 # Global variable to store if bolus injection as called, and how many carbs specified
 _is_bolus_called = False
@@ -39,60 +41,106 @@ def call_bolus(carbs_on_board):
 
 
 # Create a reading and apply the necessary insulin
-def generate_reading(user_id):
-    # Variables needed for simulation
-    user = User.objects.get(id=user_id)
-    env = T1DSimEnv(
-        patient=T1DPatient.withName(user.profile.diabetic_profile),
-        sensor=CGMSensor.withName("Dexcom", seed=user_id),
-        pump=InsulinPump.withName("Insulet", seed=user_id),
-        scenario=RandomScenario(seed=user_id),
-    )
+@shared_task
+def create_reading(*args):
+    try:
+        # Get the user from the database
+        user_id = int(args[0])
+        user = User.objects.get(id=user_id)
 
-    # Get observation if glucose readings exist
-    if user.profile.readings:
-        latest_reading = user.profile.readings[-1]
-        obs = env.step(
-            Action(
-                basal=Decimal(latest_reading.basal_injected),
-                bolus=Decimal(latest_reading.bolus_injected),
-            )
+        # Initialise simulation environment
+        env = T1DSimEnv(
+            patient=T1DPatient.withName(user.profile.diabetic_profile),
+            sensor=CGMSensor.withName("Dexcom"),
+            pump=InsulinPump.withName("Insulet"),
+            scenario=RandomScenario(
+                start_time=timezone.now().replace(tzinfo=None), seed=user_id
+            ),
         )
-    else:
-        obs = env.step(Action(basal=0, bolus=0))
 
-    # Get reading
-    reading = obs[0] / 18  # convert to mmol/L
+        # Check if previous readings exist
+        latest_reading = user.profile.glucose_readings.all().last()
 
-    # Get final reading
-    adjusted_read = GlucoseReading.adjust_for_noise(reading)
+        if latest_reading:
+            # Use actual past insulin doses if available
+            basal_dose = float(latest_reading.basal_injected)
+            bolus_dose = float(latest_reading.bolus_injected)
+        else:
+            # No previous readings - use default values
+            basal_dose = 0
+            bolus_dose = 0
 
-    # Compute trend
-    trend = GlucoseReading.detect_trend_alert()
+        # Run the insulin doses through the simulator
+        obs = env.step(Action(basal=basal_dose, bolus=bolus_dose)).observation
 
-    # Calculate basal titration
-    basal_injected = user.profile.titrate_basal()
+        # Process the new glucose reading
+        try:
+            reading_value = float(obs[0]) / 18  # Convert mg/dL to mmol/L
+        except Exception as e:
+            # Weirdly enough, if a user isn't logged in properly, simglucose won't thrown an exception
+            # Instead, it will return a Decimal, which can't be divided with the float number 18
+            # A strange error but at least we know why it may happen
+            logger.error(
+                "Error processing glucose reading, user may not be authenticated properly."
+            )
+            return
 
-    # Calculate bolus titration if bolus was called
-    if _is_bolus_called:
-        bolus_injected = user.profile.titrate_bolus(_carbs_on_board)
-    else:
-        bolus_injected = 0.00
+        # Determine the current time and calculate the 5-minute block
+        current_time = timezone.now()
+        block_start = current_time.replace(second=0, microsecond=0)
 
-    # Update IOB
-    user.profile.update_iob()
+        # Round down to the nearest 5-minute mark:
+        block_start = block_start - timedelta(minutes=(block_start.minute % 5))
 
-    # Create new glucose reading object
-    GlucoseReading.objects.create(
-        patient=user,
-        reading=adjusted_read,
-        trend=trend,
-        basal_injected=basal_injected,
-        bolus_injected=bolus_injected,
-    )
+        # Look for an existing reading in the last 24 hours with the same hour and minute as block_start
+        existing_reading = user.profile.glucose_readings.filter(
+            timestamp__gte=current_time - timedelta(hours=24),
+            timestamp__hour=block_start.hour,
+            timestamp__minute=block_start.minute,
+        ).last()
 
-    # Clear variables
-    basal_injected = 0.00
-    bolus_injected = 0.00
-    set_bolus_called(False)
-    set_carbs_on_board(0)
+        # If previous reading at same time exists, replace it, if not, create new reading
+        if existing_reading:
+            new_reading = existing_reading
+        else:
+            new_reading = GlucoseReading(patient=user.profile)
+
+        # Update reading data
+        new_reading.reading = float(new_reading.adjust_for_noise(reading_value))
+        trend_rate = new_reading.calculate_trend()
+        new_reading.trend = new_reading.detect_trend_alert(trend_rate)
+        new_reading.basal_injected = Decimal(user.profile.titrate_basal())
+        new_reading.bolus_injected = Decimal(
+            user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0
+        )
+
+        # Update the user's IOB before saving
+        user.profile.update_iob()
+
+        # Update the timestamp to the current time so that it reflects today's reading
+        new_reading.timestamp = current_time
+        new_reading.save()
+
+        # If new record, add it to the profile
+        if not existing_reading:
+            user.profile.glucose_readings.add(new_reading)
+
+        # Purge readings older than 24 hours
+        GlucoseReading.objects.filter(
+            timestamp__lt=current_time - timedelta(hours=24)
+        ).delete()
+
+        # Update user's last update time
+        user.profile.last_update_time = current_time
+        user.profile.save()
+
+        # Reset bolus variables
+        set_bolus_called(False)
+        set_carbs_on_board(0)
+
+        logger.info(f"{user.profile}\n{new_reading}")
+
+    except User.DoesNotExist:
+        logger.error(f"User with ID {user_id} not found.")
+    except Exception as e:
+        logger.error(f"Error processing user {user_id}: {e}")
