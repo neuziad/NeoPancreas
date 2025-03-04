@@ -1,3 +1,5 @@
+import asyncio
+import json
 from asgiref.sync import async_to_sync
 import random
 from django.db import models
@@ -389,13 +391,24 @@ def send_new_glucose_reading(sender, instance, created, **kwargs):
     """Broadcast new glucose reading via WebSocket"""
     if created:
         channel_layer = get_channel_layer()
+
+        if instance.patient and instance.patient.user:
+            group_name = f"user_{instance.patient.user.id}"
+        else:
+            logger.error("Couldn't find user for web socket.")
+            return
+
         data = {
             "timestamp": instance.timestamp.strftime("%H:%M"),
-            "glucose": instance.reading,
+            "glucose": float(instance.reading),  # Convert Decimal to float
+            "trend": instance.trend,
+            "bolus_injected": float(instance.bolus_injected) if instance.bolus_injected is not None else 0.0,
+            "basal_injected": float(instance.basal_injected) if instance.basal_injected is not None else 0.0,
         }
 
-        # Send message to WebSocket using async_to_sync
-        async_to_sync(channel_layer.group_send)(
-            f"user_{instance.patient.user.id}",
-            {"type": "send_glucose_reading", "reading": data},
-        )
+        async def send_event():
+            await channel_layer.group_send(
+                group_name, {"type": "send_glucose_reading", "reading": data}
+            )
+        
+        asyncio.run(send_event())

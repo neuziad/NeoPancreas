@@ -1,0 +1,23 @@
+.body {
+    font-family: 'Roboto', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    color: #404040;
+    background-color: #fcfffe;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #404040;
+}
+
+.current-glucose {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}

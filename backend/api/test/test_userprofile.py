@@ -1,6 +1,8 @@
+from unittest.mock import patch
 from django.forms import ValidationError
 from django.test import TestCase
 from django.contrib.auth.models import User
+import redis
 from api.models import UserProfile, GlucoseReading
 from datetime import date, timedelta
 from django.utils.timezone import now
@@ -80,6 +82,8 @@ class UserProfileTests(TestCase):
         bolus_dose = self.profile.titrate_bolus(carbs=50)
         self.assertEqual(bolus_dose, Decimal("0"))
 
+    @patch("channels_redis.core.RedisChannelLayer.get_connection", lambda *args, **kwargs: redis.Redis())
+    @patch("channels.layers.get_channel_layer")
     def test_titrate_basal_valid_data(self):
         """Test basal insulin titration based on glucose readings"""
         GlucoseReading.objects.create(patient=self.profile, reading=12.0, trend="↑↑")
@@ -88,6 +92,8 @@ class UserProfileTests(TestCase):
             basal_dose, Decimal("0")
         )  # Should return a dose in a case of higher glucose reading and rising trend
 
+    @patch("channels_redis.core.RedisChannelLayer.get_connection", lambda *args, **kwargs: redis.Redis())
+    @patch("channels.layers.get_channel_layer")
     def test_titrate_bolus_valid_data(self):
         """Test bolus insulin titration based on glucose readings"""
         GlucoseReading.objects.create(patient=self.profile, reading=10.0, trend="↗")

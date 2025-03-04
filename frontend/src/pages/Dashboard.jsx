@@ -1,25 +1,46 @@
+import { useState, useEffect } from 'react'
 import {
-    startSimulation,
-    stopSimulation,
+    toggleSimulation,
     getSimulationStatus,
 } from '../components/Simulations.jsx'
 import GlucoseChart from '../components/GlucoseChart.jsx'
 
-function Dashboard() {
+const Dashboard = () => {
+    const [isRunning, setIsRunning] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            const status = await getSimulationStatus()
+            setIsRunning(status)
+        }
+        checkStatus()
+    }, [])
+
+    const handleClick = async () => {
+        if (loading) return
+        setLoading(true)
+
+        await toggleSimulation()
+        const status = await getSimulationStatus() // Refresh status after toggle
+        setIsRunning(status)
+
+        setLoading(false)
+    }
+
     return (
         <div>
             <div className="btn-group">
-                <button onClick={startSimulation} className="btn btn-primary">
-                    Start Simulation
-                </button>
-                <button onClick={stopSimulation} className="btn btn-primary">
-                    Stop Simulation
-                </button>
                 <button
-                    onClick={getSimulationStatus}
+                    onClick={handleClick}
                     className="btn btn-primary"
+                    disabled={loading}
                 >
-                    Get Simulation Status
+                    {loading
+                        ? 'Processing...'
+                        : isRunning
+                          ? 'Stop Simulation'
+                          : 'Start Simulation'}
                 </button>
             </div>
             <GlucoseChart />
