@@ -23,8 +23,10 @@ const GlucoseChart = () => {
     const socketRef = useRef(null)
 
     useEffect(() => {
-        const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws"
-        const wsHost = import.meta.env.VITE_WEBSOCKET_URL || `${wsProtocol}://${window.location.hostname}:8001/ws/glucose/`
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+        const wsHost =
+            import.meta.env.VITE_WEBSOCKET_URL ||
+            `${wsProtocol}://${window.location.hostname}:8001/ws/glucose/`
 
         // Prevent duplicate connections
         if (socketRef.current) return
@@ -34,35 +36,35 @@ const GlucoseChart = () => {
         socketRef.current = socket
 
         socket.onopen = () => {
-            console.log("Connected to WebSocket")
+            console.log('Connected to WebSocket')
         }
 
         socket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data)
-                console.log("WebSocket Received:", message)
+                console.log('WebSocket Received:', message)
 
                 const formattedMessage = {
                     timestamp: message.timestamp,
                     glucose: message.glucose,
                     trend: message.trend,
                     bolus_injected: message.bolus_injected,
-                    basal_injected: message.basal_injected
+                    basal_injected: message.basal_injected,
                 }
 
                 setData((prevData) => [...prevData, formattedMessage])
             } catch (error) {
-                console.error("Error parsing WebSocket message:", error)
+                console.error('Error parsing WebSocket message:', error)
             }
         }
 
         socket.onerror = (error) => {
-            console.error("WebSocket Error:", error)
+            console.error('WebSocket Error:', error)
         }
 
         socket.onclose = () => {
-            console.log("WebSocket Disconnected")
-            socketRef.current = null  // Reset reference so it can reconnect
+            console.log('WebSocket Disconnected')
+            socketRef.current = null // Reset reference so it can reconnect
         }
 
         return () => {
@@ -90,9 +92,10 @@ const GlucoseChart = () => {
                     return {
                         timestamp: timeInMinutes,
                         glucose: parseFloat(item.glucose).toFixed(1),
-                        trend: item.trend && typeof item.trend === "string"
+                        trend:
+                            item.trend && typeof item.trend === 'string'
                                 ? item.trend
-                                : "NODATA",
+                                : 'NODATA',
                         basal_injected: item.basal_injected || 0,
                         bolus_injected: item.bolus_injected || 0,
                     }
@@ -137,7 +140,7 @@ const GlucoseChart = () => {
                     {data[data.length - 1]?.glucose
                         ? `${parseFloat(data[data.length - 1].glucose).toFixed(1)} mmol/L`
                         : ''}{' '}
-                    {data[data.length - 1]?.trend !== 'NODATA'    // Do not display trend error when no data 
+                    {data[data.length - 1]?.trend !== 'NODATA' // Do not display trend error when no data
                         ? data[data.length - 1]?.trend
                         : ''}
                 </h1>

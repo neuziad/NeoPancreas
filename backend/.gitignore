@@ -5,3 +5,4 @@ websocket_debug.log
 .coverage
 supervisord.log
 supervisord.pid
+celerybeat-schedule

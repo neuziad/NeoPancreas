@@ -4,6 +4,7 @@ import {
     getSimulationStatus,
 } from '../components/Simulations.jsx'
 import GlucoseChart from '../components/GlucoseChart.jsx'
+import TimeInRangeBar from '../components/TimeInRangeBar.jsx'
 
 const Dashboard = () => {
     const [isRunning, setIsRunning] = useState(false)
@@ -43,6 +44,7 @@ const Dashboard = () => {
                           : 'Start Simulation'}
                 </button>
             </div>
+            <TimeInRangeBar />
             <GlucoseChart />
         </div>
     )

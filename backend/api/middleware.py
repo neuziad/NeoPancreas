@@ -3,6 +3,7 @@ from channels.db import database_sync_to_async
 from rest_framework_simplejwt.tokens import AccessToken
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
+from django.apps import apps
 
 User = get_user_model()
 
@@ -13,10 +14,13 @@ class JWTAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
+        if not apps.ready:
+            raise RuntimeError("Django apps not ready yet.")
+        
         query_string = parse_qs(scope["query_string"].decode())
 
         # Extract token from WebSocket query parameters
-        token = query_string.get("token", [None])[0]
+        token = query_string.get("access", [None])[0]
         scope["user"] = AnonymousUser()
 
         if token:
