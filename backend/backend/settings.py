@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "channels",
+    "daphne",
     "django.contrib.staticfiles",
     "api",
     "simulator",
@@ -67,8 +69,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_results",
     "django_celery_beat",
-    "channels",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

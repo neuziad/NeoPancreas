@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -166,15 +168,38 @@ def simulation_status(request, user_id):
 def get_glucose_readings(request):
     """Fetch glucose readings for the logged-in user within a time range"""
     user = request.user
-    timespan = int(request.GET.get("timespan", 4))  # Default to 4 hours
+    timespan = int(request.GET.get("timespan", 4))
     start_time = now() - timedelta(hours=timespan)
 
+    # Retrieve readings from the database, including trend and insulin data
     readings = GlucoseReading.objects.filter(
         user=user, timestamp__gte=start_time
     ).order_by("timestamp")
+
+    # Format the data to include trend, bolus, and basal data
     data = [
-        {"timestamp": r.timestamp.strftime("%H:%M"), "glucose": r.value}
+        {
+            "timestamp": r.timestamp.strftime("%H:%M"),
+            "glucose": r.value,
+            "trend": r.trend,
+            "bolus_injected": r.bolus_injected or 0,
+            "basal_injected": r.basal_injected or 0
+        }
         for r in readings
     ]
 
+    # Send the readings, including trend and insulin data, to WebSocket clients
+    trigger_glucose_update(user.id, data)
+
     return Response(data)
+
+def trigger_glucose_update(user_id, glucose_data):
+    channel_layer = get_channel_layer()
+    group_name = f"glucose_{user_id}"
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            "type": "send_glucose_update",
+            "data": glucose_data
+        }
+    )

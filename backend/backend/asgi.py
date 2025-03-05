@@ -3,7 +3,7 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from django.urls import path
-from backend.api import consumers
+from api.consumers import GlucoseReadingConsumer
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 
@@ -14,7 +14,7 @@ application = ProtocolTypeRouter(
             URLRouter(
                 [
                     # WebSocket routing goes here
-                    path("ws/glucose/", consumers.GlucoseConsumer.as_asgi()),
+                    path("ws/glucose/", GlucoseReadingConsumer.as_asgi()),
                 ]
             )
         ),

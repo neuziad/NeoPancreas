@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
     ScatterChart,
     Scatter,
@@ -8,13 +8,9 @@ import {
     ResponsiveContainer,
     ReferenceArea,
 } from 'recharts'
-import { io } from 'socket.io-client'
 import axios from 'axios'
 import { ACCESS_TOKEN } from '../constants'
 import '../styles/DashboardBody.css'
-
-// Web socket address
-const socket = io(import.meta.env.WEBSOCKET_URL)
 
 const GlucoseChart = () => {
     const [data, setData] = useState([])
@@ -23,6 +19,59 @@ const GlucoseChart = () => {
     const [glucoseMax, setGlucoseMax] = useState(10)
 
     // TO-DO: Fix trend data not being processed by front-end correctly
+    // WebSocket connection
+    const socketRef = useRef(null)
+
+    useEffect(() => {
+        const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws"
+        const wsHost = import.meta.env.VITE_WEBSOCKET_URL || `${wsProtocol}://${window.location.hostname}:8001/ws/glucose/`
+
+        // Prevent duplicate connections
+        if (socketRef.current) return
+
+        // Open WebSocket connection
+        const socket = new WebSocket(wsHost)
+        socketRef.current = socket
+
+        socket.onopen = () => {
+            console.log("Connected to WebSocket")
+        }
+
+        socket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data)
+                console.log("WebSocket Received:", message)
+
+                const formattedMessage = {
+                    timestamp: message.timestamp,
+                    glucose: message.glucose,
+                    trend: message.trend,
+                    bolus_injected: message.bolus_injected,
+                    basal_injected: message.basal_injected
+                }
+
+                setData((prevData) => [...prevData, formattedMessage])
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error)
+            }
+        }
+
+        socket.onerror = (error) => {
+            console.error("WebSocket Error:", error)
+        }
+
+        socket.onclose = () => {
+            console.log("WebSocket Disconnected")
+            socketRef.current = null  // Reset reference so it can reconnect
+        }
+
+        return () => {
+            socket.close()
+            socketRef.current = null
+        }
+    }, [])
+
+    // Glucose and user data fetching
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -75,30 +124,6 @@ const GlucoseChart = () => {
         fetchData()
         fetchUserProfile()
     }, [timeScale])
-
-    // Listen for live glucose readings from web socket
-    useEffect(() => {
-        const handleNewReading = (message) => {
-            // Check the structure of the received message
-            console.log('WebSocket Received:', message)
-
-            const formattedMessage = {
-                timestamp: message.timestamp,
-                glucose: message.glucose,
-                trend: message.trend ? message.trend : "NODATA",
-                bolus_injected: message.bolus_injected,
-                basal_injected: message.basal_injected
-            }
-
-            setData((prevData) => [...prevData, formattedMessage])
-        }
-
-        socket.on('send_glucose_reading', handleNewReading)
-
-        return () => {
-            socket.off('send_glucose_reading', handleNewReading)
-        }
-    }, [])
 
     // Compute starting time
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
