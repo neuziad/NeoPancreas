@@ -6,7 +6,7 @@ from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from django.utils.timezone import now
 
-
+# TO-DO: Fix the rest of the back-end unit tests
 class GlucoseReadingTests(TestCase):
     def setUp(self):
         """Set up a user, profile, and glucose readings"""

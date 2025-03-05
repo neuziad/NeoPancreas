@@ -1,136 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 import {
+    ResponsiveContainer,
     ScatterChart,
     Scatter,
     XAxis,
     YAxis,
     Tooltip,
-    ResponsiveContainer,
     ReferenceArea,
 } from 'recharts'
-import axios from 'axios'
-import { ACCESS_TOKEN } from '../constants'
-import '../styles/DashboardBody.css'
 
-const GlucoseChart = () => {
-    const [data, setData] = useState([])
-    const [timeScale, setTimeScale] = useState(4)
-    const [glucoseMin, setGlucoseMin] = useState(4)
-    const [glucoseMax, setGlucoseMax] = useState(10)
-
-    // TO-DO: Fix trend data not being processed by front-end correctly
-    // WebSocket connection
-    const socketRef = useRef(null)
-
-    useEffect(() => {
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-        const wsHost =
-            import.meta.env.VITE_WEBSOCKET_URL ||
-            `${wsProtocol}://${window.location.hostname}:8001/ws/glucose/`
-
-        // Prevent duplicate connections
-        if (socketRef.current) return
-
-        // Open WebSocket connection
-        const socket = new WebSocket(wsHost)
-        socketRef.current = socket
-
-        socket.onopen = () => {
-            console.log('Connected to WebSocket')
-        }
-
-        socket.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data)
-                console.log('WebSocket Received:', message)
-
-                const formattedMessage = {
-                    timestamp: message.timestamp,
-                    glucose: message.glucose,
-                    trend: message.trend,
-                    bolus_injected: message.bolus_injected,
-                    basal_injected: message.basal_injected,
-                }
-
-                setData((prevData) => [...prevData, formattedMessage])
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error)
-            }
-        }
-
-        socket.onerror = (error) => {
-            console.error('WebSocket Error:', error)
-        }
-
-        socket.onclose = () => {
-            console.log('WebSocket Disconnected')
-            socketRef.current = null // Reset reference so it can reconnect
-        }
-
-        return () => {
-            socket.close()
-            socketRef.current = null
-        }
-    }, [])
-
-    // Glucose and user data fetching
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=${timeScale}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                )
-                const formattedData = res.data.map((item) => {
-                    const [hours, minutes] = item.timestamp
-                        .split(':')
-                        .map(Number) // Convert "HH:MM" to numbers
-                    const timeInMinutes = hours * 60 + minutes // Convert to numeric value
-                    return {
-                        timestamp: timeInMinutes,
-                        glucose: parseFloat(item.glucose).toFixed(1),
-                        trend:
-                            item.trend && typeof item.trend === 'string'
-                                ? item.trend
-                                : 'NODATA',
-                        basal_injected: item.basal_injected || 0,
-                        bolus_injected: item.bolus_injected || 0,
-                    }
-                })
-
-                console.log(formattedData)
-                setData(formattedData)
-            } catch (error) {
-                console.error('Error fetching glucose readings:', error)
-            }
-        }
-
-        const fetchUserProfile = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/user-profile/`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                )
-                setGlucoseMin(res.data.glucose_min)
-                setGlucoseMax(res.data.glucose_max)
-            } catch (error) {
-                console.error('Error fetching user profile:', error)
-            }
-        }
-
-        fetchData()
-        fetchUserProfile()
-    }, [timeScale])
-
-    // Compute starting time
+const GlucoseChart = ({ data, glucoseMin, glucoseMax }) => {
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
-    const startTime = Math.max(0, nowInMinutes - timeScale * 60)
+    const startTime = nowInMinutes - 24 * 60 // Show past 24 hours
 
     return (
         <div className="body">
@@ -140,35 +21,22 @@ const GlucoseChart = () => {
                     {data[data.length - 1]?.glucose
                         ? `${parseFloat(data[data.length - 1].glucose).toFixed(1)} mmol/L`
                         : ''}{' '}
-                    {data[data.length - 1]?.trend !== 'NODATA' // Do not display trend error when no data
+                    {data[data.length - 1]?.trend !== 'NODATA'
                         ? data[data.length - 1]?.trend
                         : ''}
                 </h1>
             </div>
 
-            {/* Time scale selector */}
-            <div>
-                {[4, 8, 12, 24].map((hrs) => (
-                    <button key={hrs} onClick={() => setTimeScale(hrs)}>
-                        {hrs}hr
-                    </button>
-                ))}
-            </div>
-
             {/* Chart */}
             {data.length > 0 ? (
-                <ResponsiveContainer
-                    width="100%"
-                    height={300}
-                    key={data.length}
-                >
+                <ResponsiveContainer width="100%" height={300}>
                     <ScatterChart data={data}>
                         <XAxis
                             dataKey="timestamp"
                             type="number"
                             domain={[startTime, nowInMinutes + 5]}
                             tickFormatter={(minutes) => {
-                                if (isNaN(minutes)) return '' // Prevent NaN display
+                                if (isNaN(minutes)) return ''
                                 const hh = Math.floor(minutes / 60)
                                     .toString()
                                     .padStart(2, '0')
@@ -203,21 +71,18 @@ const GlucoseChart = () => {
                         />
 
                         {/* Background colouring */}
-                        {/* Below min */}
                         <ReferenceArea
                             y1={2}
                             y2={glucoseMin}
                             fill="#B53A3A"
                             fillOpacity={0.75}
                         />
-                        {/* Normal range */}
                         <ReferenceArea
                             y1={glucoseMin}
                             y2={glucoseMax}
                             fill="#3AA246"
                             fillOpacity={0.75}
                         />
-                        {/* Above max */}
                         <ReferenceArea
                             y1={glucoseMax}
                             y2={22}
@@ -229,10 +94,22 @@ const GlucoseChart = () => {
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
-                <h1>Loading glucose data...</h1> // Fallback message instead of crashing
+                <div>
+                    <h1>Loading glucose data...</h1>
+                    <p>
+                        If this takes too long to load, you may not have any
+                        data for this range
+                    </p>
+                </div>
             )}
         </div>
     )
+}
+
+GlucoseChart.propTypes = {
+    data: PropTypes.array.isRequired,
+    glucoseMin: PropTypes.number.isRequired,
+    glucoseMax: PropTypes.number.isRequired,
 }
 
 export default GlucoseChart
