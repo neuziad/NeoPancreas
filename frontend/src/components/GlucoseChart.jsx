@@ -14,8 +14,7 @@ import { ACCESS_TOKEN } from '../constants'
 
 const WEBSOCKET_URL =
     import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws/glucose/'
-const API_URL =
-    import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const GlucoseChart = ({ glucoseMin, glucoseMax, timeScale }) => {
     const [data, setData] = useState([])
@@ -28,9 +27,12 @@ const GlucoseChart = ({ glucoseMin, glucoseMax, timeScale }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/glucose-readings?timespan=${timeScale}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+                const res = await axios.get(
+                    `${API_URL}/api/glucose-readings?timespan=${timeScale}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                )
 
                 const formattedData = res.data.map((item) => ({
                     timestamp: convertTimeToMinutes(item.timestamp),

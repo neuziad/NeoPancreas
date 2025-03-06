@@ -139,7 +139,7 @@ class GlucoseReadingTests(TestCase):
         self.assertEqual(trend_alert, "→")
 
     @patch("channels.layers.get_channel_layer")
-    def test_detect_trend_alert_moderate_rise(self):
+    def test_detect_trend_alert_moderate_rise(self, mock_get_channel_layer):
         """Test detecting a moderate glucose rise"""
         GlucoseReading.objects.create(patient=self.profile, reading=5.0)
         GlucoseReading.objects.create(patient=self.profile, reading=6.0)
@@ -150,7 +150,7 @@ class GlucoseReadingTests(TestCase):
         self.assertEqual(trend_alert, "↗")  # Moderate rise
 
     @patch("channels.layers.get_channel_layer")
-    def test_detect_trend_alert_high_fall(self):
+    def test_detect_trend_alert_high_fall(self, mock_get_channel_layer):
         """Test detecting a significant glucose drop"""
         GlucoseReading.objects.create(patient=self.profile, reading=9.0)
         GlucoseReading.objects.create(patient=self.profile, reading=7.0)

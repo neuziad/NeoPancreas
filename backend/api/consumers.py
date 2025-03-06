@@ -5,6 +5,7 @@ from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
 
+
 class GlucoseConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle new WebSocket connections."""
@@ -12,20 +13,14 @@ class GlucoseConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f"group_{self.room_name}"
 
         # Add the user to the WebSocket group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
         await self.accept()
         logger.info("WebSocket connected from consumers module!")
 
     async def disconnect(self, close_code):
         """Handle disconnection."""
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
         """Handle incoming messages (optional)."""
@@ -43,9 +38,7 @@ class GlucoseConsumer(AsyncWebsocketConsumer):
         """Retrieve the latest glucose reading from DB."""
         from .models import GlucoseReading
 
-        latest_reading = (
-            GlucoseReading.objects.order_by("-timestamp").first()
-        )
+        latest_reading = GlucoseReading.objects.order_by("-timestamp").first()
         if latest_reading:
             return {
                 "timestamp": latest_reading.timestamp.strftime("%H:%M"),

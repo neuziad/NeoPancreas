@@ -69,10 +69,10 @@ class UserProfileView(APIView):
         try:
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
-            
+
             # Ensure the serializer returns all fields
             serializer = UserProfileSerializer(user_profile)
-            
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
             return Response(
@@ -198,6 +198,7 @@ def get_glucose_readings(request):
     ]
 
     return Response(data)
+
 
 @api_view(["GET"])
 def toggle_exercise_mode(request):

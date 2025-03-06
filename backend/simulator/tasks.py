@@ -47,7 +47,7 @@ def call_bolus(carbs_on_board):
 def create_reading(*args):
     from django.contrib.auth.models import User
     from api.models import GlucoseReading
-    
+
     try:
         # Get the user from the database
         user_id = int(args[0])

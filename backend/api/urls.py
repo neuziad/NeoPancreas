@@ -5,7 +5,7 @@ from api.views import (
     start_simulation,
     stop_simulation,
     simulation_status,
-    toggle_exercise_mode
+    toggle_exercise_mode,
 )
 
 urlpatterns = [

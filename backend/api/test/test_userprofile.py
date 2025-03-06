@@ -82,26 +82,24 @@ class UserProfileTests(TestCase):
         bolus_dose = self.profile.titrate_bolus(carbs=50)
         self.assertEqual(bolus_dose, Decimal("0"))
 
-    @patch(
-        "channels_redis.core.RedisChannelLayer.get_connection",
-        lambda *args, **kwargs: redis.Redis(),
-    )
+    @patch("channels_redis.core.RedisChannelLayer.__new__")
     @patch("channels.layers.get_channel_layer")
-    def test_titrate_basal_valid_data(self):
+    def test_titrate_basal_valid_data(self, mock_get_channel_layer, mock_new):
         """Test basal insulin titration based on glucose readings"""
+        mock_new.return_value = redis.Redis()
+
         GlucoseReading.objects.create(patient=self.profile, reading=12.0, trend="↑↑")
         basal_dose = self.profile.titrate_basal()
         self.assertGreater(
             basal_dose, Decimal("0")
         )  # Should return a dose in a case of higher glucose reading and rising trend
 
-    @patch(
-        "channels_redis.core.RedisChannelLayer.get_connection",
-        lambda *args, **kwargs: redis.Redis(),
-    )
+    @patch("channels_redis.core.RedisChannelLayer.__init__")
     @patch("channels.layers.get_channel_layer")
-    def test_titrate_bolus_valid_data(self):
+    def test_titrate_bolus_valid_data(self, mock_get_channel_layer, mock_init):
         """Test bolus insulin titration based on glucose readings"""
+        mock_init.return_value = redis.Redis()
+
         GlucoseReading.objects.create(patient=self.profile, reading=10.0, trend="↗")
         bolus_dose = self.profile.titrate_bolus(carbs=80)
         self.assertGreater(

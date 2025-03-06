@@ -11,10 +11,9 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
 
-            await axios.get(
-                `${import.meta.env.VITE_API_URL}/api/toggle-em/`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            )
+            await axios.get(`${import.meta.env.VITE_API_URL}/api/toggle-em/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
 
             setLocalEmEnabled((prev) => !prev)
         } catch (error) {

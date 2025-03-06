@@ -14,6 +14,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = "__all__"
         extra_kwargs = {
+            "user": {"required": False},
             "basal_rate": {"default": 1.2},
             "correction_factor": {"default": 1.0},
             "glucose_target": {"default": 6.4},
@@ -40,7 +41,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["username", "password", "first_name", "last_name", "email", "profile"]
+        fields = [
+            "id",
+            "username",
+            "password",
+            "first_name",
+            "last_name",
+            "email",
+            "profile",
+        ]
         extra_kwargs = {
             "password": {"write_only": True},
             "email": {"required": True},
