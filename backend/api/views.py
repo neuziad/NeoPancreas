@@ -48,7 +48,13 @@ class GlucoseReadingList(APIView):
 
         # Serialize and return the data
         data = [
-            {"timestamp": r.timestamp.strftime("%H:%M"), "glucose": r.reading}
+            {
+                "timestamp": r.timestamp.strftime("%H:%M"),
+                "glucose": r.reading,
+                "trend": r.trend or "NODATA",
+                "bolus_injected": r.bolus_injected or 0,
+                "basal_injected": r.basal_injected or 0,
+            }
             for r in readings
         ]
 
@@ -63,8 +69,11 @@ class UserProfileView(APIView):
         try:
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
+            
+            # Ensure the serializer returns all fields
             serializer = UserProfileSerializer(user_profile)
-            return Response(serializer.data)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except UserProfile.DoesNotExist:
             return Response(
                 {"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND
@@ -183,23 +192,16 @@ def get_glucose_readings(request):
             "glucose": r.value,
             "trend": r.trend,
             "bolus_injected": r.bolus_injected or 0,
-            "basal_injected": r.basal_injected or 0
+            "basal_injected": r.basal_injected or 0,
         }
         for r in readings
     ]
 
-    # Send the readings, including trend and insulin data, to WebSocket clients
-    trigger_glucose_update(user.id, data)
-
     return Response(data)
 
-def trigger_glucose_update(user_id, glucose_data):
-    channel_layer = get_channel_layer()
-    group_name = f"glucose_{user_id}"
-    async_to_sync(channel_layer.group_send)(
-        group_name,
-        {
-            "type": "send_glucose_update",
-            "data": glucose_data
-        }
-    )
+@api_view(["GET"])
+def toggle_exercise_mode(request):
+    user = request.user
+    user.profile.em_enabled = not user.profile.em_enabled
+    user.profile.save()
+    return JsonResponse({"success": True})

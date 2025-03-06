@@ -12,24 +12,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = [
-            "dob",
-            "basal_rate",
-            "correction_factor",
-            "glucose_target",
-            "glucose_min",
-            "glucose_max",
-            "bolus_max",
-            "carb_ratio",
-            "insulin_duration",
-            "iob",
-            "cob",
-            "max_iob",
-            "diabetic_profile",
-            "em_enabled",
-            "carb_ratio",
-            "last_update_time",
-        ]
+        fields = "__all__"
         extra_kwargs = {
             "basal_rate": {"default": 1.2},
             "correction_factor": {"default": 1.0},

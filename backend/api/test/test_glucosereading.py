@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from django.utils.timezone import now
 
+
 # TO-DO: Fix the rest of the back-end unit tests
 class GlucoseReadingTests(TestCase):
     def setUp(self):
@@ -86,10 +87,10 @@ class GlucoseReadingTests(TestCase):
 
         # Create a glucose reading instance (without Redis)
         glucose_reading = GlucoseReading(patient=self.profile)
-        
+
         # Calculate the trend
         trend = glucose_reading.calculate_trend()
-        
+
         # Assert the trend calculation
         self.assertEqual(trend, (7.0 - 5.0) / 3)  # Expected trend rate
 
@@ -101,7 +102,9 @@ class GlucoseReadingTests(TestCase):
 
     @patch("channels.layers.get_channel_layer")
     @patch("api.models.GlucoseReading")
-    def test_detect_trend_alert_flat_trend(self, MockGlucoseReading, mock_get_channel_layer):
+    def test_detect_trend_alert_flat_trend(
+        self, MockGlucoseReading, mock_get_channel_layer
+    ):
         """Test detecting a flat glucose trend"""
 
         # Create mock GlucoseReading instance and mock the method `detect_trend_alert`
@@ -113,9 +116,15 @@ class GlucoseReadingTests(TestCase):
         MockGlucoseReading.objects.create.return_value = mock_glucose_reading
 
         # Simulate glucose readings with the same value to create a flat trend
-        MockGlucoseReading.objects.create(patient=self.profile, reading=5.0, timestamp=now())
-        MockGlucoseReading.objects.create(patient=self.profile, reading=5.0, timestamp=now())
-        MockGlucoseReading.objects.create(patient=self.profile, reading=5.0, timestamp=now())
+        MockGlucoseReading.objects.create(
+            patient=self.profile, reading=5.0, timestamp=now()
+        )
+        MockGlucoseReading.objects.create(
+            patient=self.profile, reading=5.0, timestamp=now()
+        )
+        MockGlucoseReading.objects.create(
+            patient=self.profile, reading=5.0, timestamp=now()
+        )
 
         # Create an instance of MockGlucoseReading for testing the trend detection
         glucose_reading = MockGlucoseReading(patient=self.profile)
@@ -128,7 +137,6 @@ class GlucoseReadingTests(TestCase):
 
         # Assert the trend is detected as "→" (indicating no significant change)
         self.assertEqual(trend_alert, "→")
-
 
     @patch("channels.layers.get_channel_layer")
     def test_detect_trend_alert_moderate_rise(self):

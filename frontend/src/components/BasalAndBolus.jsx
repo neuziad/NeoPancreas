@@ -7,21 +7,18 @@ import { useState } from 'react'
 const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
     const [localEmEnabled, setLocalEmEnabled] = useState(emEnabled)
 
-    // TO-DO: Implement logic to update exercise mode
     const toggleExerciseMode = async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
-            const newEmEnabled = !localEmEnabled
 
-            await axios.patch(
-                `${import.meta.env.VITE_API_URL}/api/user-profile/`,
-                { em_enabled: newEmEnabled },
+            await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/toggle-em/`,
                 { headers: { Authorization: `Bearer ${token}` } }
             )
 
-            setLocalEmEnabled(newEmEnabled) // Update local state
+            setLocalEmEnabled((prev) => !prev)
         } catch (error) {
-            console.error('❌ Error updating exercise mode:', error)
+            console.error('❌ Error toggling exercise mode:', error)
         }
     }
 
@@ -34,12 +31,12 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
                     display: 'inline-block',
                 }}
             >
-                IOB: {iob} U
+                IOB: {iob}U
             </div>
             <button onClick={toggleExerciseMode}>
                 {localEmEnabled
-                    ? 'Disable Exercise Mode'
-                    : 'Enable Exercise Mode'}
+                    ? 'Exercise Mode: Enabled'
+                    : 'Exercise Mode: Disabled'}
             </button>
             <div
                 style={{

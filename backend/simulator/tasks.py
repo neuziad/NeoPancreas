@@ -1,8 +1,8 @@
+import logging
+import django
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
-from api.models import GlucoseReading
 from simglucose.simulation.env import T1DSimEnv
 from simglucose.patient.t1dpatient import T1DPatient
 from simglucose.sensor.cgm import CGMSensor
@@ -11,9 +11,11 @@ from simglucose.simulation.scenario_gen import RandomScenario
 from simglucose.controller.base import Action
 from decimal import Decimal, getcontext
 from celery import shared_task
-import logging
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 # Constants
+django.setup()
 getcontext().prec = 3
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -43,6 +45,9 @@ def call_bolus(carbs_on_board):
 # Create a reading and apply the necessary insulin
 @shared_task
 def create_reading(*args):
+    from django.contrib.auth.models import User
+    from api.models import GlucoseReading
+    
     try:
         # Get the user from the database
         user_id = int(args[0])
@@ -118,8 +123,25 @@ def create_reading(*args):
         user.profile.update_iob()
 
         # Update the timestamp to the current time so that it reflects today's reading
+        # and save new reading
         new_reading.timestamp = current_time
         new_reading.save()
+
+        # Update WebSocket on new reading data
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "group_glucose_updates",  # This should match the group name in your consumer
+            {
+                "type": "send_glucose_update",
+                "data": {
+                    "timestamp": new_reading.timestamp.strftime("%H:%M"),
+                    "glucose": float(new_reading.reading),
+                    "trend": new_reading.trend or "NODATA",
+                    "bolus_injected": float(new_reading.bolus_injected),
+                    "basal_injected": float(new_reading.basal_injected),
+                },
+            },
+        )
 
         # If new record, add it to the profile
         if not existing_reading:

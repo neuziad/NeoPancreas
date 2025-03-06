@@ -5,12 +5,18 @@ import GlucoseChart from '../components/GlucoseChart'
 import { ACCESS_TOKEN } from '../constants'
 import '../styles/Dashboard.css'
 import BasalAndBolus from '../components/BasalAndBolus'
+import {
+    toggleSimulation,
+    getSimulationStatus,
+} from '../components/Simulations'
 
 const Dashboard = () => {
     const [userProfile, setUserProfile] = useState(null)
     const [timeInRangeData, setTimeInRangeData] = useState([])
     const [chartData, setChartData] = useState([])
     const [selectedChartTimespan, setSelectedChartTimespan] = useState(4)
+    const [isRunning, setIsRunning] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem(ACCESS_TOKEN)
@@ -25,9 +31,16 @@ const Dashboard = () => {
                 setUserProfile({
                     glucoseMin: parseFloat(res.data.glucose_min),
                     glucoseMax: parseFloat(res.data.glucose_max),
-                    basalrate: parseFloat(res.data.basalrate), // TO-DO: Fix basal rate not printing out properly (NaN)
+                    glucoseTarget: parseFloat(res.data.glucose_target),
+                    basalRate: parseFloat(res.data.basal_rate),
                     emEnabled: res.data.em_enabled,
+                    carbRatio: parseFloat(res.data.carb_ratio),
+                    correctionFactor: parseFloat(res.data.correction_factor),
                     iob: parseFloat(res.data.iob),
+                    bolusMax: parseFloat(res.data.bolus_max),
+                    diabeticProfile: res.data.diabetic_profile,
+                    maxIOB: parseFloat(res.data.max_iob),
+                    insulinDuration: parseInt(res.data.insulin_duration),
                 })
             } catch (error) {
                 console.error('❌ Error fetching user profile:', error)
@@ -73,11 +86,11 @@ const Dashboard = () => {
                         parseInt(item.timestamp.split(':')[0]) * 60 +
                         parseInt(item.timestamp.split(':')[1]),
                     glucose: parseFloat(item.glucose),
-                    trend:
-                        item.trend && typeof item.trend === 'string'
-                            ? item.trend
-                            : 'NODATA',
+                    trend: item.trend || 'NODATA',
+                    bolus_injected: item.bolus_injected || 0,
+                    basal_injected: item.basal_injected || 0,
                 }))
+                console.log(formattedData)
                 setChartData(formattedData)
             } catch (error) {
                 console.error(
@@ -92,9 +105,35 @@ const Dashboard = () => {
 
     if (!userProfile) return <h1>Loading dashboard...</h1>
 
+    const handleClick = async () => {
+        if (!userProfile) return
+        setLoading(true)
+
+        await toggleSimulation()
+        const status = await getSimulationStatus() // Refresh status after toggle
+        setIsRunning(status)
+
+        setLoading(false)
+    }
+
     return (
         <div>
             <h1>Dashboard</h1>
+
+            <div className="btn-group">
+                <button
+                    onClick={handleClick}
+                    className="btn btn-primary"
+                    disabled={loading}
+                >
+                    {loading
+                        ? 'Processing...'
+                        : isRunning
+                          ? 'Stop Simulation'
+                          : 'Start Simulation'}
+                </button>
+            </div>
+
             <h2>Time in Range (24h)</h2>
             <TimeInRangeBar
                 data={timeInRangeData}
@@ -117,10 +156,11 @@ const Dashboard = () => {
                 data={chartData}
                 glucoseMin={userProfile.glucoseMin}
                 glucoseMax={userProfile.glucoseMax}
+                timeScale={selectedChartTimespan}
             />
 
             <BasalAndBolus
-                basalrate={userProfile.basalrate}
+                basalrate={userProfile.basalRate}
                 emEnabled={userProfile.emEnabled}
                 iob={userProfile.iob}
             />

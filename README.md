@@ -2,24 +2,12 @@
 
 ## How to run
 
-### Backend
+### Docker container
+
+This project requires multiple moving parts, and so a Docker Compose file was written to run each image necessary for the project.
 
 ```bash
-# If it's your first time running
-cd backend
-python manage.py makemigrations
-python manage.py migrate
-
-# Run app
-python manage.py runserver
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm i
-npm run dev
+docker compose up --build
 ```
 
 ## Package docs

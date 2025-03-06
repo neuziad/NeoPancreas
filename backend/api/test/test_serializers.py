@@ -101,7 +101,7 @@ class GlucoseSerializerTest(TestCase):
             patient=self.profile, timestamp=now(), reading=6.5, trend="→"
         )
 
-    @patch("channels.layers.get_channel_layer")    
+    @patch("channels.layers.get_channel_layer")
     def test_glucose_serialization(self):
         """Ensure GlucoseSerializer correctly serializes glucose readings."""
         serializer = GlucoseSerializer(instance=self.reading)

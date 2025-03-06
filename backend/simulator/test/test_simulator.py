@@ -38,12 +38,20 @@ class SimulatorTests(TestCase):
     @patch("api.models.GlucoseReading.adjust_for_noise")
     @patch("channels.layers.get_channel_layer")
     def test_create_reading_creates_new_reading(
-        self, mock_channel_layer, mock_adjust_for_noise, MockGlucoseReading, MockT1DSimEnv
+        self,
+        mock_channel_layer,
+        mock_adjust_for_noise,
+        MockGlucoseReading,
+        MockT1DSimEnv,
     ):
         """Test that a new glucose reading is created correctly."""
-        
+
         mock_env = MockT1DSimEnv.return_value
-        mock_env.step.return_value.observation = [180, 0, 0]  # mg/dL (converted to mmol/L)
+        mock_env.step.return_value.observation = [
+            180,
+            0,
+            0,
+        ]  # mg/dL (converted to mmol/L)
 
         mock_reading = MagicMock()
         MockGlucoseReading.objects.filter.return_value.last.return_value = None
@@ -60,14 +68,20 @@ class SimulatorTests(TestCase):
     @patch("simulator.tasks.T1DSimEnv")
     @patch("simulator.tasks.GlucoseReading")
     @patch("api.models.GlucoseReading")
-    @patch("channels_redis.core.RedisChannelLayer.get_connection", return_value=MagicMock())
+    @patch(
+        "channels_redis.core.RedisChannelLayer.get_connection", return_value=MagicMock()
+    )
     @patch("channels.layers.get_channel_layer")
     def test_create_reading_updates_existing_reading(
         self, mock_get_channel_layer, MockGlucoseReading, MockT1DSimEnv
     ):
         """Test that an existing reading is updated instead of creating a new one."""
         mock_env = MockT1DSimEnv.return_value
-        mock_env.step.return_value.observation = [144, 0, 0]  # mg/dL (converted to mmol/L)
+        mock_env.step.return_value.observation = [
+            144,
+            0,
+            0,
+        ]  # mg/dL (converted to mmol/L)
 
         existing_reading = MockGlucoseReading()
         MockGlucoseReading.objects.filter.return_value.last.return_value = (
@@ -85,14 +99,23 @@ class SimulatorTests(TestCase):
 
     @patch("simulator.tasks.GlucoseReading.objects.filter")
     @patch("channels_redis.core.RedisChannelLayer.__init__", return_value=None)
-    @patch("channels_redis.core.RedisChannelLayer.__new__", return_value=MagicMock(prefix="test_prefix"))
-    def test_old_readings_are_deleted(self, mock_redis_new, mock_redis_init, mock_filter):
+    @patch(
+        "channels_redis.core.RedisChannelLayer.__new__",
+        return_value=MagicMock(prefix="test_prefix"),
+    )
+    def test_old_readings_are_deleted(
+        self, mock_redis_new, mock_redis_init, mock_filter
+    ):
         """Ensure that glucose readings older than 24 hours are deleted."""
-        
+
         # Create glucose readings (some older, some newer than 24 hours)
-        GlucoseReading.objects.create(patient=self.profile, reading=5.0, timestamp=now() - timedelta(days=2))
-        GlucoseReading.objects.create(patient=self.profile, reading=6.0, timestamp=now() - timedelta(hours=23))
-        
+        GlucoseReading.objects.create(
+            patient=self.profile, reading=5.0, timestamp=now() - timedelta(days=2)
+        )
+        GlucoseReading.objects.create(
+            patient=self.profile, reading=6.0, timestamp=now() - timedelta(hours=23)
+        )
+
         # Mock the return value of filter's delete method
         mock_filter.return_value.delete.return_value = (1, {})
 

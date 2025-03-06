@@ -7,6 +7,7 @@ from django.apps import apps
 
 User = get_user_model()
 
+
 class JWTAuthMiddleware:
     """Custom WebSocket middleware to authenticate users via JWT token."""
 
@@ -16,7 +17,7 @@ class JWTAuthMiddleware:
     async def __call__(self, scope, receive, send):
         if not apps.ready:
             raise RuntimeError("Django apps not ready yet.")
-        
+
         query_string = parse_qs(scope["query_string"].decode())
 
         # Extract token from WebSocket query parameters
