@@ -119,9 +119,6 @@ def create_reading(*args):
             user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0
         )
 
-        # Update the user's IOB before saving
-        user.profile.update_iob()
-
         # Update the timestamp to the current time so that it reflects today's reading
         # and save new reading
         new_reading.timestamp = current_time

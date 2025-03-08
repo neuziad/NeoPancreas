@@ -18,39 +18,50 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
         <div
             style={{
                 display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
             }}
         >
             <div
                 style={{
-                    width: '35%',
-                    height: '30px',
+                    width: '80px',
+                    height: '230px',
                     borderRadius: '8px',
                     border: '3px solid #000000',
                     display: 'flex',
+                    flexDirection: 'column-reverse',
                     alignItems: 'center',
                     fontFamily: 'Roboto',
                     textAlign: 'center',
+                    overflow: 'hidden',
+                    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.25)',
                 }}
             >
                 {/* Red segment for low glucose */}
                 <div
                     style={{
-                        width: `${lowPercentage}%`,
+                        height: `${lowPercentage}%`,
+                        width: '100%',
                         backgroundColor: '#B53A3A',
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         color: 'white',
                         fontSize: '25px',
+                        fontWeight: 'lighter',
                         borderRadius: '5px',
+                        borderTopLeftRadius: '5px',
+                        borderTopRightRadius: '5px',
                     }}
                 >
                     {lowPercentage > 0 ? `${lowPercentage.toFixed(0)}%` : ''}
                 </div>
+
                 {/* Green segment for in-range glucose */}
                 <div
                     style={{
-                        width: `${inRangePercentage}%`,
+                        height: `${inRangePercentage}%`,
+                        width: '100%',
                         backgroundColor: '#3AA246',
                         display: 'flex',
                         justifyContent: 'center',
@@ -65,17 +76,22 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         ? `${inRangePercentage.toFixed(0)}%`
                         : ''}
                 </div>
+
                 {/* Yellow segment for high glucose */}
                 <div
                     style={{
-                        width: `${highPercentage}%`,
+                        height: `${highPercentage}%`,
+                        width: '100%',
                         backgroundColor: '#CBA63F',
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         color: 'white',
-                        fontSize: '25px',
+                        fontSize: '12px',
+                        fontWeight: 'lighter',
                         borderRadius: '5px',
+                        borderTopLeftRadius: '5px',
+                        borderTopRightRadius: '5px',
                     }}
                 >
                     {highPercentage > 0 ? `${highPercentage.toFixed(0)}%` : ''}
@@ -88,7 +104,15 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                     fontFamily: 'Roboto',
                 }}
             >
-                Time in range (past 24 hours)
+                <span style={{ fontSize: '1.2rem' }}>
+                    <b>Time in range</b>
+                </span>
+                <br />
+                <i>
+                    <span style={{ fontSize: '0.9rem', color: '#8F8F8F' }}>
+                        (past 24 hours)
+                    </span>
+                </i>
             </div>
         </div>
     )

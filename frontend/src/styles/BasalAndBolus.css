@@ -1,0 +1,107 @@
+* {
+    font-family: 'Roboto', sans-serif;
+}
+
+.basal-bolus-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    gap: 10px;
+}
+
+.iob-box {
+    position: absolute;
+    top: 5.5rem;
+    padding: 5px 10px;
+    border: 1px solid black;
+    display: inline-block;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    background: white;
+    font-weight: bold;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.exercise-mode {
+    position: relative;
+    top: 0.5rem;
+    left: 16.5rem;
+    border: 1px solid black;
+    padding: 5px 10px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    text-transform: uppercase;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.exercise-mode.enabled {
+    background-color: #3aa246;
+    color: white;
+}
+
+.exercise-mode.disabled {
+    background-color: #b53a3a;
+    color: white;
+}
+
+.insulin-sections {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.bolus-section {
+    background-color: #d3e4f8;
+    border: 2px solid black;
+    padding: 20px;
+    text-align: center;
+    width: 200px;
+    height: 160px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.bolus-section h2 {
+    color: #404040;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: initial;
+}
+
+.bolus-icon {
+    font-size: 50px;
+    margin: 10px 0;
+}
+
+.bolus-section p {
+    font-style: italic;
+    font-size: 14px;
+    color: #555;
+}
+
+.basal-section {
+    background-color: #f8c4c4;
+    border: 2px solid black;
+    padding: 20px;
+    text-align: center;
+    width: 200px;
+    height: 160px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.basal-section h2 {
+    color: #404040;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: initial;
+}
+
+.basal-rate {
+    font-size: 2.5rem;
+}

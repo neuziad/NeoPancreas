@@ -1,6 +1,3 @@
-import asyncio
-import json
-from asgiref.sync import async_to_sync
 import random
 from django.db import models
 from django.contrib.auth.models import User
@@ -13,9 +10,6 @@ from django.utils.timezone import now
 from datetime import timedelta
 from decimal import Decimal, getcontext
 import logging
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from channels.layers import get_channel_layer
 
 # Constants
 getcontext().prec = 3
@@ -354,7 +348,7 @@ class GlucoseReading(models.Model):
         if qs.count() < 3:
             return 0
 
-        past_bg = qs.first().reading
+        past_bg = qs[qs.count() - 4].reading  # Reading every 5 minutes = 4th to last
         current_bg = qs.last().reading
         return (current_bg - past_bg) / 3
 

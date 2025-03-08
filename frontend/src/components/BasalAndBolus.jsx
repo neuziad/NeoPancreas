@@ -2,8 +2,8 @@ import axios from 'axios'
 import PropTypes from 'prop-types'
 import { ACCESS_TOKEN } from '../constants'
 import { useState } from 'react'
+import '../styles/BasalAndBolus.css'
 
-// TO-DO: Implement bolus button
 const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
     const [localEmEnabled, setLocalEmEnabled] = useState(emEnabled)
 
@@ -21,30 +21,55 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
         }
     }
 
+    const showBolusPrompt = () => {
+        const bolus = prompt('Enter bolus amount:')
+        if (bolus) {
+            alert(`Bolus of ${bolus}U sent!`)
+        }
+    }
+
     return (
-        <div>
-            <div
-                style={{
-                    padding: '5px',
-                    border: '1px solid black',
-                    display: 'inline-block',
-                }}
-            >
-                IOB: {iob}U
+        <div className="container">
+            {/* IOB Display */}
+            <div className="iob-box">
+                <span>
+                    <span style={{ color: '#4A4A4A', fontSize: '0.8rem' }}>
+                        IOB
+                    </span>{' '}
+                    <strong style={{ fontSize: '1.3rem' }}>{iob}U</strong>{' '}
+                    approx.
+                </span>
             </div>
-            <button onClick={toggleExerciseMode}>
-                {localEmEnabled
-                    ? 'Exercise Mode: Enabled'
-                    : 'Exercise Mode: Disabled'}
-            </button>
-            <div
-                style={{
-                    margin: '20px 0',
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                }}
+
+            {/* Exercise Mode Toggle */}
+            <button
+                className={`exercise-mode ${localEmEnabled ? 'enabled' : 'disabled'}`}
+                onClick={toggleExerciseMode}
             >
-                Basal Rate: {basalrate} U/hr
+                <span>Exercise mode?</span> {localEmEnabled ? 'ON' : 'OFF'}
+            </button>
+
+            <div className="insulin-sections">
+                {/* Bolus Section */}
+                <div className="bolus-section" onClick={showBolusPrompt}>
+                    <h2>Bolus</h2>
+                    <div className="bolus-icon">
+                        {/* Placeholder for an icon (replace with actual img if needed) */}
+                        💉
+                    </div>
+                    <p>Click here to administer bolus</p>
+                </div>
+
+                {/* Basal Section */}
+                <div className="basal-section">
+                    <h2>Basal</h2>
+                    <div className="basal-rate">
+                        <span style={{ fontSize: '4.25rem', fontWeight: 600 }}>
+                            {basalrate}
+                        </span>
+                        U/hr
+                    </div>
+                </div>
             </div>
         </div>
     )

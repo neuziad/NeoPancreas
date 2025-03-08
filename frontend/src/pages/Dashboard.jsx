@@ -5,10 +5,15 @@ import GlucoseChart from '../components/GlucoseChart'
 import { ACCESS_TOKEN } from '../constants'
 import '../styles/Dashboard.css'
 import BasalAndBolus from '../components/BasalAndBolus'
+import GlucoseReading from '../components/GlucoseReading'
 import {
     toggleSimulation,
     getSimulationStatus,
 } from '../components/Simulations'
+import { ToggleButton, ToggleButtonGroup } from "@mui/material"
+
+const WEBSOCKET_URL =
+    import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws/glucose/'
 
 const Dashboard = () => {
     const [userProfile, setUserProfile] = useState(null)
@@ -17,17 +22,22 @@ const Dashboard = () => {
     const [selectedChartTimespan, setSelectedChartTimespan] = useState(4)
     const [isRunning, setIsRunning] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [glucoseData, setGlucoseData] = useState([])
 
+    // Fetch status of simulation
     useEffect(() => {
-        const token = localStorage.getItem(ACCESS_TOKEN)
+        const status = getSimulationStatus()
+        status.then((res) => setIsRunning(res))
+    }, [])
 
-        // Fetch user profile (common for both components)
+    // API fetching user profile attributes
+    useEffect(() => {
         const fetchUserProfile = async () => {
             try {
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/user-profile/`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                )
+                const token = localStorage.getItem(ACCESS_TOKEN)
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/user-profile/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
                 setUserProfile({
                     glucoseMin: parseFloat(res.data.glucose_min),
                     glucoseMax: parseFloat(res.data.glucose_max),
@@ -50,18 +60,16 @@ const Dashboard = () => {
         fetchUserProfile()
     }, [])
 
+    // API fetching glucose data for 24h (Time in range bar)
     useEffect(() => {
-        const token = localStorage.getItem(ACCESS_TOKEN)
         const fetchDataForTimeInRange = async () => {
             try {
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=24`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                )
+                const token = localStorage.getItem(ACCESS_TOKEN)
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=24`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
                 const formattedData = res.data.map((item) => ({
-                    timestamp:
-                        parseInt(item.timestamp.split(':')[0]) * 60 +
-                        parseInt(item.timestamp.split(':')[1]),
+                    timestamp: parseInt(item.timestamp.split(':')[0]) * 60 + parseInt(item.timestamp.split(':')[1]),
                     glucose: parseFloat(item.glucose),
                 }))
                 setTimeInRangeData(formattedData)
@@ -73,34 +81,71 @@ const Dashboard = () => {
         fetchDataForTimeInRange()
     }, [])
 
+    // API fetching glucose data for the chart
     useEffect(() => {
-        const token = localStorage.getItem(ACCESS_TOKEN)
         const fetchDataForChart = async () => {
             try {
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=${selectedChartTimespan}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                )
+                const token = localStorage.getItem(ACCESS_TOKEN)
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=${selectedChartTimespan}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
                 const formattedData = res.data.map((item) => ({
-                    timestamp:
-                        parseInt(item.timestamp.split(':')[0]) * 60 +
-                        parseInt(item.timestamp.split(':')[1]),
+                    timestamp: parseInt(item.timestamp.split(':')[0]) * 60 + parseInt(item.timestamp.split(':')[1]),
                     glucose: parseFloat(item.glucose),
                     trend: item.trend || 'NODATA',
                     bolus_injected: item.bolus_injected || 0,
                     basal_injected: item.basal_injected || 0,
                 }))
-                console.log(formattedData)
                 setChartData(formattedData)
             } catch (error) {
-                console.error(
-                    `❌ Error fetching ${selectedChartTimespan}h glucose readings:`,
-                    error
-                )
+                console.error(`❌ Error fetching ${selectedChartTimespan}h glucose readings:`, error)
             }
         }
 
         fetchDataForChart()
+    }, [selectedChartTimespan])
+
+    // WebSocket for real-time updates
+    useEffect(() => {
+        const socket = new WebSocket(WEBSOCKET_URL)
+
+        socket.onopen = () => console.log('✅ WebSocket Connected')
+
+        socket.onmessage = (event) => {
+            const newReading = JSON.parse(event.data)
+            console.log('📡 WebSocket Data:', newReading)
+
+            const formattedReading = {
+                timestamp: new Date().getHours() * 60 + new Date().getMinutes(),
+                glucose: parseFloat(newReading.glucose),
+                trend: newReading.trend || 'NODATA',
+                bolus_injected: newReading.bolus_injected || 0,
+                basal_injected: newReading.basal_injected || 0,
+            }
+
+            // Append new glucose data (Real-time)
+            setGlucoseData((prev) => [...prev, formattedReading])
+
+            // Keep chartData updated (Filter old data)
+            setChartData((prev) => {
+                const updatedData = [...prev, formattedReading];
+                const cutoffTime = new Date().getTime() - selectedChartTimespan * 60 * 60 * 1000;
+                const filteredData = updatedData.filter((entry) => entry.timestamp * 60 * 1000 >= cutoffTime);
+                return filteredData.length > 0 ? filteredData : updatedData;
+            });
+
+            // Update profile-related attributes
+            setUserProfile((prevProfile) => ({
+                ...prevProfile,
+                basalRate: prevProfile.basal_rate ? parseFloat(prevProfile.basal_rate) : prevProfile?.basalRate,
+                iob: prevProfile.iob ? parseFloat(prevProfile.iob) : prevProfile?.iob,
+                emEnabled: prevProfile.em_enabled !== undefined ? prevProfile.em_enabled : prevProfile?.emEnabled,
+            }))
+        }
+
+        socket.onerror = (error) => console.error('❌ WebSocket Error:', error)
+
+        return () => socket.close()
     }, [selectedChartTimespan])
 
     if (!userProfile) return <h1>Loading dashboard...</h1>
@@ -110,7 +155,7 @@ const Dashboard = () => {
         setLoading(true)
 
         await toggleSimulation()
-        const status = await getSimulationStatus() // Refresh status after toggle
+        const status = await getSimulationStatus()
         setIsRunning(status)
 
         setLoading(false)
@@ -118,52 +163,115 @@ const Dashboard = () => {
 
     return (
         <div>
-            <h1>Dashboard</h1>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem',
+                    justifyContent: 'center'
 
-            <div className="btn-group">
-                <button
-                    onClick={handleClick}
-                    className="btn btn-primary"
-                    disabled={loading}
+                }}
+            >
+                {/* Left section: glucose reading & time in range */}
+                <div style={{ display: 'flex', flexDirection: 'flow', alignItems: 'center' }}>
+                    <GlucoseReading
+                        data={glucoseData}
+                        startData={timeInRangeData[timeInRangeData.length - 1]}
+                        glucoseMin={userProfile.glucoseMin}
+                        glucoseMax={userProfile.glucoseMax}
+                    />
+                    <TimeInRangeBar
+                        data={timeInRangeData}
+                        glucoseMin={userProfile.glucoseMin}
+                        glucoseMax={userProfile.glucoseMax}
+                    />
+                </div>
+
+                {/* Vertical separator */}
+                <div
+                    style={{
+                        width: '1px',
+                        height: '410px',
+                        background: 'linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)',
+                    }}
+                ></div>
+
+                {/* Right section: IOB, exercise mode, bolus, basal */}
+                <BasalAndBolus
+                    basalrate={userProfile.basalRate}
+                    emEnabled={userProfile.emEnabled}
+                    iob={userProfile.iob}
+                />
+            </div>
+
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                width: '100%',
+                flexDirection: 'row-reverse',
+            }}>
+                {/* Time Selector */}
+                <ToggleButtonGroup
+                    value={selectedChartTimespan}
+                    exclusive
+                    onChange={(_, newValue) => {
+                        if (newValue !== null) {
+                            setSelectedChartTimespan(newValue);
+                        }
+                    }}
+                    aria-label="chart timespan"
+                    sx={{
+                        borderBottom: "2px solid #666",
+                        borderRadius: 0,
+                        width: "11%",
+                        justifyContent: "flex-start",
+                        height: "2.3rem",
+                        marginTop: "0.9rem",
+                        marginRight: "0.8rem"
+                    }}
                 >
-                    {loading
-                        ? 'Processing...'
-                        : isRunning
-                          ? 'Stop Simulation'
-                          : 'Start Simulation'}
-                </button>
+                    {[4, 8, 12, 24].map((hrs) => (
+                        <ToggleButton
+                            key={hrs}
+                            value={hrs}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: "bold",
+                                color: "#666",
+                                "&.Mui-selected": {
+                                    color: "black",
+                                    borderBottom: "2px solid black",
+                                    backgroundColor: "transparent",
+                                },
+                                "&:hover": {
+                                    backgroundColor: "transparent",
+                                },
+                            }}
+                        >
+                            {hrs}hr
+                        </ToggleButton>
+                    ))}
+                </ToggleButtonGroup>
+
+                {/* Start/Stop Button */}
+                <div className="btn-group" style={{ flexGrow: 0.035, display: 'flex', justifyContent: 'flex-end' }}>
+                    {loading ? (
+                        <span>Processing...</span>
+                    ) : (
+                        <img 
+                            src={isRunning ? '/stopsim.svg' : '/startsim.svg'} 
+                            alt={isRunning ? 'Stop Simulation' : 'Start Simulation'}
+                            width="50" 
+                            height="50"
+                            onClick={handleClick}
+                            style={{ cursor: 'pointer' }}
+                        />
+                    )}
+                </div>
             </div>
 
-            <h2>Time in Range (24h)</h2>
-            <TimeInRangeBar
-                data={timeInRangeData}
-                glucoseMin={userProfile.glucoseMin}
-                glucoseMax={userProfile.glucoseMax}
-            />
-
-            <h2>Glucose Chart</h2>
-            <div>
-                {[4, 8, 12, 24].map((hrs) => (
-                    <button
-                        key={hrs}
-                        onClick={() => setSelectedChartTimespan(hrs)}
-                    >
-                        {hrs}hr
-                    </button>
-                ))}
-            </div>
-            <GlucoseChart
-                data={chartData}
-                glucoseMin={userProfile.glucoseMin}
-                glucoseMax={userProfile.glucoseMax}
-                timeScale={selectedChartTimespan}
-            />
-
-            <BasalAndBolus
-                basalrate={userProfile.basalRate}
-                emEnabled={userProfile.emEnabled}
-                iob={userProfile.iob}
-            />
+            <GlucoseChart chartData={chartData} glucoseMin={userProfile.glucoseMin} glucoseMax={userProfile.glucoseMax} timeScale={selectedChartTimespan} />
         </div>
     )
 }
