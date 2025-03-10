@@ -54,7 +54,7 @@ class UserProfile(models.Model):
 
             # Set diabetic_profile based on age
             if age < 18:
-                ValidationError(
+                raise ValidationError(
                     gettext_lazy(
                         "This app is designed only for patients 18 years or older."
                     )
@@ -178,8 +178,10 @@ class UserProfile(models.Model):
         # Process new insulin doses
         new_bolus = Decimal("0.0")
         new_basal = Decimal("0.0")
-        for reading in self.glucose_readings.all():
-            if reading.timestamp > (current_time - timedelta(minutes=5)):
+        readings = list(self.glucose_readings.filter(timestamp__gt=current_time - timedelta(minutes=5)))
+
+        if readings:
+            for reading in readings:
                 new_bolus += reading.bolus_injected
                 new_basal += reading.basal_injected
 
@@ -206,10 +208,10 @@ class UserProfile(models.Model):
 
         qs = self.glucose_readings.all()
 
-        # Ensure current glucose is a Decimal to avoid float-Decimal issues
-        if qs.exists():
-            current_glucose = Decimal(str(qs.first().reading))
-            glucose_trend = qs.first().trend
+        first_reading = qs.first()
+        if first_reading:
+            current_glucose = Decimal(str(first_reading.reading))
+            glucose_trend = first_reading.trend
         else:
             current_glucose = Decimal("0")
             glucose_trend = "NODATA"
@@ -345,7 +347,7 @@ class GlucoseReading(models.Model):
     def calculate_trend(self):
         """Calculates the trend based on glucose levels over 15 minutes."""
         qs = self.patient.glucose_readings.all()
-        if qs.count() < 3:
+        if qs.count() < 4:
             return 0
 
         past_bg = qs[qs.count() - 4].reading  # Reading every 5 minutes = 4th to last
@@ -355,7 +357,7 @@ class GlucoseReading(models.Model):
     def detect_trend_alert(self, trend_rate):
         """Detects significant glucose changes and issues alerts."""
         qs = self.patient.glucose_readings.all()
-        if qs.count() < 3:
+        if qs.count() < 4:
             return "NODATA"
         else:
             # Assign trend category based on Dexcom G7 criteria

@@ -73,6 +73,7 @@ const Dashboard = () => {
                     glucose: parseFloat(item.glucose),
                 }))
                 setTimeInRangeData(formattedData)
+                console.log("Initial time in range data:", formattedData)
             } catch (error) {
                 console.error('❌ Error fetching 24h glucose readings:', error)
             }
@@ -141,6 +142,15 @@ const Dashboard = () => {
                 iob: prevProfile.iob ? parseFloat(prevProfile.iob) : prevProfile?.iob,
                 emEnabled: prevProfile.em_enabled !== undefined ? prevProfile.em_enabled : prevProfile?.emEnabled,
             }))
+
+            // Update data for time in range bar
+            setTimeInRangeData((prev) => {
+                const updatedData = [
+                    ...prev,
+                    { timestamp: formattedReading.timestamp, glucose: formattedReading.glucose },
+                ]
+                return updatedData
+            })
         }
 
         socket.onerror = (error) => console.error('❌ WebSocket Error:', error)
@@ -161,6 +171,7 @@ const Dashboard = () => {
         setLoading(false)
     }
 
+    // TO-DO: Add dashboard header
     return (
         <div>
             <div

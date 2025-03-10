@@ -5,7 +5,6 @@ import {
     Scatter,
     XAxis,
     YAxis,
-    Tooltip,
     ReferenceArea,
 } from 'recharts'
 
@@ -45,30 +44,6 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                             axisLine={true}
                             tick={{ fontSize: 14 }}
                         />
-                        <Tooltip
-                            formatter={(value, name) => {
-                                if (name === 'glucose') {
-                                    return [value.toFixed(1), 'Blood Glucose']
-                                } else if (name === 'bolus_injected') {
-                                    return [value, 'Bolus Injected']
-                                } else if (name === 'basal_injected') {
-                                    return [value, 'Basal Injected']
-                                }
-                                return value
-                            }}
-                            labelFormatter={(label) => {
-                                const hh = Math.floor(label / 60)
-                                    .toString()
-                                    .padStart(2, '0')
-                                const mm = (label % 60)
-                                    .toString()
-                                    .padStart(2, '0')
-                                return `Time: ${hh}:${mm}`
-                            }}
-                            labelStyle={{ fontSize: 14 }}
-                            itemStyle={{ fontSize: 14 }}
-                        />
-
                         {/* Background colouring */}
                         <ReferenceArea
                             y1={2}
@@ -93,7 +68,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
-                <div>
+                <div style={{ marginLeft: "3.5%", marginTop: "2%"}}>
                     <h1>Loading glucose data...</h1>
                     <p>
                         If this takes too long to load, you may not have any

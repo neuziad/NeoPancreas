@@ -78,6 +78,10 @@ def create_reading(*args):
         # Run the insulin doses through the simulator
         obs = env.step(Action(basal=basal_dose, bolus=bolus_dose)).observation
 
+        if not obs or len(obs) == 0:  # Debugging
+            logger.error("Observation data is empty, cannot retrieve glucose reading.")
+            return
+
         # Process the new glucose reading
         try:
             reading_value = float(obs[0]) / 18  # Convert mg/dL to mmol/L
@@ -148,6 +152,9 @@ def create_reading(*args):
         GlucoseReading.objects.filter(
             timestamp__lt=current_time - timedelta(hours=24)
         ).delete()
+
+        # Update patient IOB
+        user.profile.update_iob()
 
         # Update user's last update time
         user.profile.last_update_time = current_time
