@@ -2,10 +2,12 @@ import axios from 'axios'
 import PropTypes from 'prop-types'
 import { ACCESS_TOKEN } from '../constants'
 import { useState } from 'react'
+import BolusModal from './Modals'
 import '../styles/BasalAndBolus.css'
 
-const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
+const BasalAndBolus = ({ basalrate, emEnabled, iob, bolusMax, currentGlucose, carbRatio, correctionFactor, glucoseTarget, glucoseMin }) => {
     const [localEmEnabled, setLocalEmEnabled] = useState(emEnabled)
+    const [isModalOpen, setIsModalOpen] = useState(false)
 
     const toggleExerciseMode = async () => {
         try {
@@ -22,10 +24,11 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
     }
 
     const showBolusPrompt = () => {
-        const bolus = prompt('Enter bolus amount:')
-        if (bolus) {
-            alert(`Bolus of ${bolus}U sent!`)
-        }
+        setIsModalOpen(true)
+    }
+
+    const closeBolusModal = () => {
+        setIsModalOpen(false)
     }
 
     return (
@@ -50,7 +53,7 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
             </button>
 
             <div className="insulin-sections">
-                {/* Bolus Section */}
+                {/* Bolus section */}
                 <div className="bolus-section" onClick={showBolusPrompt}>
                     <h2>Bolus</h2>
                     <div className="bolus-icon">
@@ -60,7 +63,22 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
                     <p>Click here to administer bolus</p>
                 </div>
 
-                {/* Basal Section */}
+                {/* Bolus modal */}
+                <BolusModal
+                    isOpen={isModalOpen}
+                    onClose={closeBolusModal}
+                    emEnabled={emEnabled}
+                    carbs={0}
+                    currentGlucose={currentGlucose}
+                    carbRatio={carbRatio}
+                    correctionFactor={correctionFactor}
+                    glucoseTarget={glucoseTarget}
+                    glucoseMin={glucoseMin}
+                    insulinOnBoard={iob}
+                    maxBolus={bolusMax}
+                />
+
+                {/* Basal section */}
                 <div className="basal-section">
                     <h2>Basal</h2>
                     <div className="basal-rate">
@@ -80,6 +98,12 @@ BasalAndBolus.propTypes = {
     basalrate: PropTypes.number.isRequired,
     emEnabled: PropTypes.bool.isRequired,
     iob: PropTypes.number.isRequired,
+    bolusMax: PropTypes.number.isRequired,
+    currentGlucose: PropTypes.number.isRequired,
+    carbRatio: PropTypes.number.isRequired,
+    correctionFactor: PropTypes.number.isRequired,
+    glucoseTarget: PropTypes.number.isRequired,
+    glucoseMin: PropTypes.number.isRequired,
 }
 
 export default BasalAndBolus

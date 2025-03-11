@@ -8,11 +8,13 @@ from simglucose.patient.t1dpatient import T1DPatient
 from simglucose.sensor.cgm import CGMSensor
 from simglucose.actuator.pump import InsulinPump
 from simglucose.simulation.scenario_gen import RandomScenario
-from simglucose.controller.base import Action
+from simglucose.controller.base import Action, Controller
 from decimal import Decimal, getcontext
 from celery import shared_task
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.contrib.auth.models import User
+from api.models import GlucoseReading
 
 # Constants
 django.setup()
@@ -45,9 +47,6 @@ def call_bolus(carbs_on_board):
 # Create a reading and apply the necessary insulin
 @shared_task
 def create_reading(*args):
-    from django.contrib.auth.models import User
-    from api.models import GlucoseReading
-
     try:
         # Get the user from the database
         user_id = int(args[0])

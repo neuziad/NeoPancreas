@@ -78,6 +78,19 @@ class UserProfileView(APIView):
             )
 
 
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            """Retrieve the authenticated user's data"""
+            return Response(UserSerializer(request.user).data)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer

@@ -178,7 +178,11 @@ class UserProfile(models.Model):
         # Process new insulin doses
         new_bolus = Decimal("0.0")
         new_basal = Decimal("0.0")
-        readings = list(self.glucose_readings.filter(timestamp__gt=current_time - timedelta(minutes=5)))
+        readings = list(
+            self.glucose_readings.filter(
+                timestamp__gt=current_time - timedelta(minutes=5)
+            )
+        )
 
         if readings:
             for reading in readings:

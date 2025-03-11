@@ -6,6 +6,7 @@ from api.views import (
     stop_simulation,
     simulation_status,
     toggle_exercise_mode,
+    UserView,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
         "glucose-readings/", GlucoseReadingList.as_view(), name="glucose-readings-list"
     ),
     path("user-profile/", UserProfileView.as_view(), name="user-profile"),
+    path("user/", UserView.as_view(), name="user"),
     path("toggle-em/", toggle_exercise_mode, name="toggle_exercise_mode"),
 ]

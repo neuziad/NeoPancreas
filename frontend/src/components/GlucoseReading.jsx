@@ -43,7 +43,9 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
             >
                 <h1 className="glucose-value">
                     {glucoseValue}{' '}
-                    {trend !== 'NODATA' && <span className="glucose-trend">{trend}</span>}
+                    {trend !== 'NODATA' && (
+                        <span className="glucose-trend">{trend}</span>
+                    )}
                 </h1>
                 <p className="glucose-unit">mmol/L</p>
             </div>

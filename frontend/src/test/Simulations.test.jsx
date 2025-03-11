@@ -5,6 +5,7 @@ import {
     toggleSimulation,
 } from '../components/Simulations'
 import api from '../api'
+import axios from 'axios'
 import { jwtDecode } from 'jwt-decode'
 import { ACCESS_TOKEN } from '../constants'
 import { describe, it, expect, jest, beforeEach, global } from '@jest/globals'

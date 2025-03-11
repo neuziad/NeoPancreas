@@ -16,7 +16,10 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
             {/* Chart */}
             {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={440}>
-                    <ScatterChart data={chartData} style={{ marginLeft: "-0.5rem"}}>
+                    <ScatterChart
+                        data={chartData}
+                        style={{ marginLeft: '-0.5rem' }}
+                    >
                         <XAxis
                             dataKey="timestamp"
                             type="number"
@@ -68,7 +71,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
-                <div style={{ marginLeft: "3.5%", marginTop: "2%"}}>
+                <div style={{ marginLeft: '3.5%', marginTop: '2%' }}>
                     <h1>Loading glucose data...</h1>
                     <p>
                         If this takes too long to load, you may not have any
