@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 import {
     ResponsiveContainer,
     ScatterChart,
@@ -6,7 +6,7 @@ import {
     XAxis,
     YAxis,
     ReferenceArea,
-} from 'recharts'
+} from "recharts"
 
 const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
@@ -18,7 +18,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                 <ResponsiveContainer width="100%" height={440}>
                     <ScatterChart
                         data={chartData}
-                        style={{ marginLeft: '-0.5rem' }}
+                        style={{ marginLeft: "-0.5rem" }}
                     >
                         <XAxis
                             dataKey="timestamp"
@@ -30,13 +30,13 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                                     : nowInMinutes + 5,
                             ]}
                             tickFormatter={(minutes) => {
-                                if (isNaN(minutes)) return ''
+                                if (isNaN(minutes)) return ""
                                 const hh = Math.floor(minutes / 60)
                                     .toString()
-                                    .padStart(2, '0')
+                                    .padStart(2, "0")
                                 const mm = (minutes % 60)
                                     .toString()
-                                    .padStart(2, '0')
+                                    .padStart(2, "0")
                                 return `${hh}:${mm}`
                             }}
                             tick={{ fontSize: 14 }}
@@ -71,7 +71,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
-                <div style={{ marginLeft: '3.5%', marginTop: '2%' }}>
+                <div style={{ marginLeft: "3.5%", marginTop: "2%" }}>
                     <h1>Loading glucose data...</h1>
                     <p>
                         If this takes too long to load, you may not have any

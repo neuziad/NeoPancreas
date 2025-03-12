@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
-import PropTypes from 'prop-types'
+import { useState, useEffect, useCallback } from "react"
+import PropTypes from "prop-types"
 
 const EXERCISE_MODE_MODIFIER = 0.75
 
 /* TO-DO: Bolus modal needs revamping and titrate_bolus algorith has to be re-written to receive
-* bolus data from modal */
+ * bolus data from modal */
 const BolusModal = ({
     isOpen,
     onClose,
@@ -37,7 +37,6 @@ const BolusModal = ({
 
         // Round to nearest 0.05 for pump precision
         return Math.round(bolusPerStep / 0.05) * 0.05
-        
     }, [
         carbs,
         carbRatio,

@@ -1,13 +1,13 @@
-import axios from 'axios'
-import PropTypes from 'prop-types'
-import { ACCESS_TOKEN } from '../constants'
-import { useState } from 'react'
-import BolusModal from './Modals'
-import '../styles/BasalAndBolus.css'
+import axios from "axios"
+import PropTypes from "prop-types"
+import { ACCESS_TOKEN } from "../constants"
+import { useState } from "react"
+// import BolusModal from './Modals'
+import "../styles/BasalAndBolus.css"
 
-const BasalAndBolus = ({ basalrate, emEnabled, iob, bolusMax, currentGlucose, carbRatio, correctionFactor, glucoseTarget, glucoseMin }) => {
+const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
     const [localEmEnabled, setLocalEmEnabled] = useState(emEnabled)
-    const [isModalOpen, setIsModalOpen] = useState(false)
+    // const [isModalOpen, setIsModalOpen] = useState(false)
 
     const toggleExerciseMode = async () => {
         try {
@@ -19,42 +19,45 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob, bolusMax, currentGlucose, ca
 
             setLocalEmEnabled((prev) => !prev)
         } catch (error) {
-            console.error('❌ Error toggling exercise mode:', error)
+            console.error("❌ Error toggling exercise mode:", error)
         }
     }
 
-    const showBolusPrompt = () => {
-        setIsModalOpen(true)
-    }
+    // const showBolusPrompt = () => {
+    //     setIsModalOpen(true)
+    // }
 
-    const closeBolusModal = () => {
-        setIsModalOpen(false)
-    }
+    // const closeBolusModal = () => {
+    //     setIsModalOpen(false)
+    // }
 
     return (
         <div className="container">
             {/* IOB Display */}
             <div className="iob-box">
                 <span>
-                    <span style={{ color: '#4A4A4A', fontSize: '0.8rem' }}>
+                    <span style={{ color: "#4A4A4A", fontSize: "0.8rem" }}>
                         IOB
-                    </span>{' '}
-                    <strong style={{ fontSize: '1.3rem' }}>{iob}U</strong>{' '}
+                    </span>{" "}
+                    <strong style={{ fontSize: "1.3rem" }}>{iob}U</strong>{" "}
                     approx.
                 </span>
             </div>
 
             {/* Exercise Mode Toggle */}
             <button
-                className={`exercise-mode ${localEmEnabled ? 'enabled' : 'disabled'}`}
+                className={`exercise-mode ${localEmEnabled ? "enabled" : "disabled"}`}
                 onClick={toggleExerciseMode}
             >
-                <span>Exercise mode?</span> {localEmEnabled ? 'ON' : 'OFF'}
+                <span>Exercise mode?</span> {localEmEnabled ? "ON" : "OFF"}
             </button>
 
             <div className="insulin-sections">
                 {/* Bolus section */}
-                <div className="bolus-section" onClick={showBolusPrompt}>
+                <div
+                    className="bolus-section"
+                    onClick={() => {}} /* onClick={showBolusPrompt} */
+                >
                     <h2>Bolus</h2>
                     <div className="bolus-icon">
                         {/* Placeholder for an icon (replace with actual img if needed) */}
@@ -64,7 +67,7 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob, bolusMax, currentGlucose, ca
                 </div>
 
                 {/* Bolus modal */}
-                <BolusModal
+                {/* <BolusModal
                     isOpen={isModalOpen}
                     onClose={closeBolusModal}
                     emEnabled={emEnabled}
@@ -76,13 +79,13 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob, bolusMax, currentGlucose, ca
                     glucoseMin={glucoseMin}
                     insulinOnBoard={iob}
                     maxBolus={bolusMax}
-                />
+                /> */}
 
                 {/* Basal section */}
                 <div className="basal-section">
                     <h2>Basal</h2>
                     <div className="basal-rate">
-                        <span style={{ fontSize: '4.25rem', fontWeight: 600 }}>
+                        <span style={{ fontSize: "4.25rem", fontWeight: 600 }}>
                             {basalrate}
                         </span>
                         U/hr

@@ -1,6 +1,6 @@
 # CSC3094 Major Dissertation and Project: NeoPancreas
 
-## How to run
+## Building and running
 
 ### Docker container
 
@@ -8,6 +8,31 @@ This project requires multiple moving parts, and so a Docker Compose file was wr
 
 ```bash
 docker compose up --build
+```
+
+## Running tests
+
+Three sets of unit tests are provided: back-end unit testing (for Django, Celery, Redis), front-end unit testing (for React, WebSockets and API connections) and simulation unit tests (separate Simglucose-based simulations for running algorithms.)
+
+### Running back-end tests
+
+```bash
+cd backend
+python manage.py test
+```
+
+### Running front-end tests
+
+```bash
+cd frontend
+npm test
+```
+
+### Running simulation tests
+
+```bash
+cd simulations
+echo will work on this later i promise lol
 ```
 
 ## Package docs

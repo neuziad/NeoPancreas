@@ -1,6 +1,6 @@
-import { jwtDecode } from 'jwt-decode'
-import { ACCESS_TOKEN } from '../constants'
-import api from '../api'
+import { jwtDecode } from "jwt-decode"
+import { ACCESS_TOKEN } from "../constants"
+import api from "../api"
 
 // Function to get the authenticated user's ID
 function getUserId() {
@@ -11,7 +11,7 @@ function getUserId() {
         const decoded = jwtDecode(token)
         return decoded.user_id || null
     } catch (error) {
-        console.error('Error decoding token:', error)
+        console.error("Error decoding token:", error)
         return null
     }
 }
@@ -20,8 +20,8 @@ function getUserId() {
 export async function startSimulation() {
     const userId = getUserId()
     if (!userId) {
-        alert('You need to log in first!')
-        return
+        window.alert("You need to log in first!")
+        return false
     }
 
     try {
@@ -34,10 +34,10 @@ export async function startSimulation() {
                 },
             }
         )
-        console.log('Simulation started:', response.data)
+        console.log("Simulation started:", response.data)
         return true
     } catch (error) {
-        console.error('Error starting simulation:', error)
+        console.error("Error starting simulation:", error)
         return false
     }
 }
@@ -46,8 +46,8 @@ export async function startSimulation() {
 export async function stopSimulation() {
     const userId = getUserId()
     if (!userId) {
-        alert('You need to log in first!')
-        return
+        window.alert("You need to log in first!")
+        return false
     }
 
     try {
@@ -60,10 +60,10 @@ export async function stopSimulation() {
                 },
             }
         )
-        console.log('Simulation stopped:', response.data)
+        console.log("Simulation stopped:", response.data)
         return true
     } catch (error) {
-        console.error('Error stopping simulation:', error)
+        console.error("Error stopping simulation:", error)
         return false
     }
 }
@@ -72,7 +72,7 @@ export async function stopSimulation() {
 export async function getSimulationStatus() {
     const userId = getUserId()
     if (!userId) {
-        alert('You need to log in first!')
+        window.alert("You need to log in first!")
         return false
     }
 
@@ -84,7 +84,7 @@ export async function getSimulationStatus() {
         })
         return response.data.running
     } catch (error) {
-        console.error('Error fetching simulation status:', error)
+        console.error("Error fetching simulation status:", error)
         return false
     }
 }
@@ -94,10 +94,10 @@ export async function toggleSimulation() {
     const isRunning = await getSimulationStatus()
     if (isRunning) {
         const stopped = await stopSimulation()
-        if (stopped) alert('Simulation stopped successfully!')
+        if (stopped) window.alert("Simulation stopped successfully!")
     } else {
         const started = await startSimulation()
-        if (started) alert('Simulation started successfully!')
+        if (started) window.alert("Simulation started successfully!")
     }
 }
 

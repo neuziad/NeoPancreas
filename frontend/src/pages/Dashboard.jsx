@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
-import TimeInRangeBar from '../components/TimeInRangeBar'
-import GlucoseChart from '../components/GlucoseChart'
-import { ACCESS_TOKEN } from '../constants'
-import '../styles/Dashboard.css'
-import BasalAndBolus from '../components/BasalAndBolus'
-import GlucoseReading from '../components/GlucoseReading'
+import { useState, useEffect } from "react"
+import axios from "axios"
+import TimeInRangeBar from "../components/TimeInRangeBar"
+import GlucoseChart from "../components/GlucoseChart"
+import { ACCESS_TOKEN } from "../constants"
+import "../styles/Dashboard.css"
+import BasalAndBolus from "../components/BasalAndBolus"
+import GlucoseReading from "../components/GlucoseReading"
 import {
     toggleSimulation,
     getSimulationStatus,
-} from '../components/Simulations'
-import { ToggleButton, ToggleButtonGroup } from '@mui/material'
+} from "../components/Simulations"
+import { ToggleButton, ToggleButtonGroup } from "@mui/material"
 
 const WEBSOCKET_URL =
-    import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:8000/ws/glucose/'
+    import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8000/ws/glucose/"
 
 const Dashboard = () => {
     const [userProfile, setUserProfile] = useState(null)
@@ -57,7 +57,7 @@ const Dashboard = () => {
                     insulinDuration: parseInt(res.data.insulin_duration),
                 })
             } catch (error) {
-                console.error('❌ Error fetching user profile:', error)
+                console.error("❌ Error fetching user profile:", error)
             }
         }
 
@@ -77,14 +77,14 @@ const Dashboard = () => {
                 )
                 const formattedData = res.data.map((item) => ({
                     timestamp:
-                        parseInt(item.timestamp.split(':')[0]) * 60 +
-                        parseInt(item.timestamp.split(':')[1]),
+                        parseInt(item.timestamp.split(":")[0]) * 60 +
+                        parseInt(item.timestamp.split(":")[1]),
                     glucose: parseFloat(item.glucose),
                 }))
                 setTimeInRangeData(formattedData)
-                console.log('Initial time in range data:', formattedData)
+                console.log("Initial time in range data:", formattedData)
             } catch (error) {
-                console.error('❌ Error fetching 24h glucose readings:', error)
+                console.error("❌ Error fetching 24h glucose readings:", error)
             }
         }
 
@@ -104,10 +104,10 @@ const Dashboard = () => {
                 )
                 const formattedData = res.data.map((item) => ({
                     timestamp:
-                        parseInt(item.timestamp.split(':')[0]) * 60 +
-                        parseInt(item.timestamp.split(':')[1]),
+                        parseInt(item.timestamp.split(":")[0]) * 60 +
+                        parseInt(item.timestamp.split(":")[1]),
                     glucose: parseFloat(item.glucose),
-                    trend: item.trend || 'NODATA',
+                    trend: item.trend || "NODATA",
                     bolus_injected: item.bolus_injected || 0,
                     basal_injected: item.basal_injected || 0,
                 }))
@@ -136,7 +136,7 @@ const Dashboard = () => {
                 )
                 setCurrentUser(res.data)
             } catch (error) {
-                console.error('❌ Error fetching user:', error)
+                console.error("❌ Error fetching user:", error)
             }
         }
 
@@ -147,16 +147,16 @@ const Dashboard = () => {
     useEffect(() => {
         const socket = new WebSocket(WEBSOCKET_URL)
 
-        socket.onopen = () => console.log('✅ WebSocket Connected')
+        socket.onopen = () => console.log("✅ WebSocket Connected")
 
         socket.onmessage = (event) => {
             const newReading = JSON.parse(event.data)
-            console.log('📡 WebSocket Data:', newReading)
+            console.log("📡 WebSocket Data:", newReading)
 
             const formattedReading = {
                 timestamp: new Date().getHours() * 60 + new Date().getMinutes(),
                 glucose: parseFloat(newReading.glucose),
-                trend: newReading.trend || 'NODATA',
+                trend: newReading.trend || "NODATA",
                 bolus_injected: newReading.bolus_injected || 0,
                 basal_injected: newReading.basal_injected || 0,
             }
@@ -231,7 +231,7 @@ const Dashboard = () => {
             })
         }
 
-        socket.onerror = (error) => console.error('❌ WebSocket Error:', error)
+        socket.onerror = (error) => console.error("❌ WebSocket Error:", error)
 
         return () => socket.close()
     }, [selectedChartTimespan])
@@ -266,19 +266,19 @@ const Dashboard = () => {
 
             <div
                 style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1.5rem',
-                    justifyContent: 'center',
-                    marginTop: '2rem',
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "1.5rem",
+                    justifyContent: "center",
+                    marginTop: "2rem",
                 }}
             >
                 {/* Left section: glucose reading & time in range */}
                 <div
                     style={{
-                        display: 'flex',
-                        flexDirection: 'flow',
-                        alignItems: 'center',
+                        display: "flex",
+                        flexDirection: "flow",
+                        alignItems: "center",
                     }}
                 >
                     <GlucoseReading
@@ -297,10 +297,10 @@ const Dashboard = () => {
                 {/* Vertical separator */}
                 <div
                     style={{
-                        width: '1px',
-                        height: '410px',
+                        width: "1px",
+                        height: "410px",
                         background:
-                            'linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)',
+                            "linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)",
                     }}
                 ></div>
 
@@ -309,22 +309,22 @@ const Dashboard = () => {
                     basalrate={userProfile.basalRate}
                     emEnabled={userProfile.emEnabled}
                     iob={userProfile.iob}
-                    bolusMax={userProfile.bolusMax}
-                    currentGlucose={glucoseData[glucoseData.length - 1].glucose}
-                    carbRatio={userProfile.carbRatio}
-                    correctionFactor={userProfile.correctionFactor}
-                    glucoseTarget={userProfile.glucoseTarget}
-                    glucoseMin={userProfile.glucoseMin}
+                    // bolusMax={userProfile.bolusMax}
+                    // currentGlucose={glucoseData[glucoseData.length - 1].glucose}
+                    // carbRatio={userProfile.carbRatio}
+                    // correctionFactor={userProfile.correctionFactor}
+                    // glucoseTarget={userProfile.glucoseTarget}
+                    // glucoseMin={userProfile.glucoseMin}
                 />
             </div>
 
             <div
                 style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                    flexDirection: 'row-reverse',
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                    flexDirection: "row-reverse",
                 }}
             >
                 {/* Time selector */}
@@ -332,17 +332,18 @@ const Dashboard = () => {
                     value={selectedChartTimespan}
                     exclusive
                     onChange={(_, newValue) => {
-                        if (newValue !== null) setSelectedChartTimespan(newValue)
+                        if (newValue !== null)
+                            setSelectedChartTimespan(newValue)
                     }}
                     aria-label="chart timespan"
                     sx={{
-                        borderBottom: '2px solid #666',
+                        borderBottom: "2px solid #666",
                         borderRadius: 0,
-                        width: '11%',
-                        justifyContent: 'flex-start',
-                        height: '2.3rem',
-                        marginTop: '0.9rem',
-                        marginRight: '0.8rem',
+                        width: "11%",
+                        justifyContent: "flex-start",
+                        height: "2.3rem",
+                        marginTop: "0.9rem",
+                        marginRight: "0.8rem",
                     }}
                 >
                     {[4, 8, 12, 24].map((hrs) => (
@@ -350,16 +351,16 @@ const Dashboard = () => {
                             key={hrs}
                             value={hrs}
                             sx={{
-                                textTransform: 'none',
-                                fontWeight: 'bold',
-                                color: '#666',
-                                '&.Mui-selected': {
-                                    color: 'black',
-                                    borderBottom: '2px solid black',
-                                    backgroundColor: 'transparent',
+                                textTransform: "none",
+                                fontWeight: "bold",
+                                color: "#666",
+                                "&.Mui-selected": {
+                                    color: "black",
+                                    borderBottom: "2px solid black",
+                                    backgroundColor: "transparent",
                                 },
-                                '&:hover': {
-                                    backgroundColor: 'transparent',
+                                "&:hover": {
+                                    backgroundColor: "transparent",
                                 },
                             }}
                         >
@@ -373,24 +374,24 @@ const Dashboard = () => {
                     className="btn-group"
                     style={{
                         flexGrow: 0.035,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
+                        display: "flex",
+                        justifyContent: "flex-end",
                     }}
                 >
                     {loading ? (
                         <span>Processing...</span>
                     ) : (
                         <img
-                            src={isRunning ? '/stopsim.svg' : '/startsim.svg'}
+                            src={isRunning ? "/stopsim.svg" : "/startsim.svg"}
                             alt={
                                 isRunning
-                                    ? 'Stop Simulation'
-                                    : 'Start Simulation'
+                                    ? "Stop Simulation"
+                                    : "Start Simulation"
                             }
                             width="50"
                             height="50"
                             onClick={handleClick}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: "pointer" }}
                         />
                     )}
                 </div>

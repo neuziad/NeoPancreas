@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import PropTypes from 'prop-types'
-import '../styles/GlucoseReading.css'
+import { useState, useEffect } from "react"
+import PropTypes from "prop-types"
+import "../styles/GlucoseReading.css"
 // import axios from 'axios'
 // import { ACCESS_TOKEN } from '../constants'
 
@@ -8,7 +8,7 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
     const [glucoseValue, setGlucoseValue] = useState(
         data.length > 0 ? data[data.length - 1].glucose : 0.0
     )
-    const [trend, setTrend] = useState('')
+    const [trend, setTrend] = useState("")
 
     // When starting, retrieve latest glucose reading from local storage
     useEffect(() => {
@@ -28,12 +28,12 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
     }, [data])
 
     // Determine border color based on glucose value
-    let borderColor = '#3AA246' // Green (Good range)
+    let borderColor = "#3AA246" // Green (Good range)
     if (glucoseValue === 0.0)
-        borderColor = '#B3B3B3' // Grey (No data or zero reading)
+        borderColor = "#B3B3B3" // Grey (No data or zero reading)
     else if (glucoseValue > 0.0 && glucoseValue < glucoseMin)
-        borderColor = '#B53A3A' // Red (Low)
-    else if (glucoseValue > glucoseMax) borderColor = '#CBA63F' // Yellow (High)
+        borderColor = "#B53A3A" // Red (Low)
+    else if (glucoseValue > glucoseMax) borderColor = "#CBA63F" // Yellow (High)
 
     return (
         <div className="glucose-container">
@@ -42,8 +42,8 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
                 style={{ borderColor: borderColor }} // Apply dynamic border color
             >
                 <h1 className="glucose-value">
-                    {glucoseValue}{' '}
-                    {trend !== 'NODATA' && (
+                    {glucoseValue}{" "}
+                    {trend !== "NODATA" && (
                         <span className="glucose-trend">{trend}</span>
                     )}
                 </h1>

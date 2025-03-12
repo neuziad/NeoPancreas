@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types"
 
 const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
     const totalEntries = data.length
@@ -17,99 +17,102 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
     return (
         <div
             style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
             }}
         >
             <div
                 style={{
-                    width: '80px',
-                    height: '230px',
-                    borderRadius: '8px',
-                    border: '3px solid #000000',
-                    display: 'flex',
-                    flexDirection: 'column-reverse',
-                    alignItems: 'center',
-                    fontFamily: 'Roboto',
-                    textAlign: 'center',
-                    overflow: 'hidden',
-                    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.25)',
+                    width: "80px",
+                    height: "230px",
+                    borderRadius: "8px",
+                    border: "3px solid #000000",
+                    display: "flex",
+                    flexDirection: "column-reverse",
+                    alignItems: "center",
+                    fontFamily: "Roboto",
+                    textAlign: "center",
+                    overflow: "hidden",
+                    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.25)",
                 }}
             >
                 {/* Red segment for low glucose */}
                 <div
+                    data-testid="low-tir"
                     style={{
-                        height: `${lowPercentage}%`,
-                        width: '100%',
-                        backgroundColor: '#B53A3A',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        color: 'white',
-                        fontSize: '25px',
-                        fontWeight: 'lighter',
-                        borderRadius: '5px',
-                        borderTopLeftRadius: '5px',
-                        borderTopRightRadius: '5px',
+                        height: `${lowPercentage.toFixed(1)}%`,
+                        width: "100%",
+                        backgroundColor: "#B53A3A",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        fontSize: "25px",
+                        fontWeight: "lighter",
+                        borderRadius: "5px",
+                        borderTopLeftRadius: "5px",
+                        borderTopRightRadius: "5px",
                     }}
                 >
-                    {lowPercentage > 0 ? `${lowPercentage.toFixed(0)}%` : ''}
+                    {lowPercentage > 0 ? `${lowPercentage.toFixed(0)}%` : ""}
                 </div>
 
                 {/* Green segment for in-range glucose */}
                 <div
+                    data-testid="in-range-tir"
                     style={{
-                        height: `${inRangePercentage}%`,
-                        width: '100%',
-                        backgroundColor: '#3AA246',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        color: 'white',
-                        fontSize: '25px',
-                        fontWeight: 'bold',
-                        borderRadius: '5px',
+                        height: `${inRangePercentage.toFixed(1)}%`,
+                        width: "100%",
+                        backgroundColor: "#3AA246",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        fontSize: "25px",
+                        fontWeight: "bold",
+                        borderRadius: "5px",
                     }}
                 >
                     {inRangePercentage > 0
                         ? `${inRangePercentage.toFixed(0)}%`
-                        : ''}
+                        : ""}
                 </div>
 
                 {/* Yellow segment for high glucose */}
                 <div
+                    data-testid="high-tir"
                     style={{
-                        height: `${highPercentage}%`,
-                        width: '100%',
-                        backgroundColor: '#CBA63F',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        color: 'white',
-                        fontSize: '12px',
-                        fontWeight: 'lighter',
-                        borderRadius: '5px',
-                        borderTopLeftRadius: '5px',
-                        borderTopRightRadius: '5px',
+                        height: `${highPercentage.toFixed(1)}%`,
+                        width: "100%",
+                        backgroundColor: "#CBA63F",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                        fontSize: "12px",
+                        fontWeight: "lighter",
+                        borderRadius: "5px",
+                        borderTopLeftRadius: "5px",
+                        borderTopRightRadius: "5px",
                     }}
                 >
-                    {highPercentage > 0 ? `${highPercentage.toFixed(0)}%` : ''}
+                    {highPercentage > 0 ? `${highPercentage.toFixed(0)}%` : ""}
                 </div>
             </div>
             <div
                 style={{
-                    textAlign: 'center',
-                    marginTop: '10px',
-                    fontFamily: 'Roboto',
+                    textAlign: "center",
+                    marginTop: "10px",
+                    fontFamily: "Roboto",
                 }}
             >
-                <span style={{ fontSize: '1.2rem' }}>
+                <span style={{ fontSize: "1.2rem" }}>
                     <b>Time in range</b>
                 </span>
                 <br />
                 <i>
-                    <span style={{ fontSize: '0.9rem', color: '#8F8F8F' }}>
+                    <span style={{ fontSize: "0.9rem", color: "#8F8F8F" }}>
                         (past 24 hours)
                     </span>
                 </i>
