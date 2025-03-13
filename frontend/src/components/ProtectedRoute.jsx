@@ -40,6 +40,10 @@ function ProtectedRoute({ children }) {
         auth().catch(() => setIsAuthorized(false))
     }, [])
 
+    useEffect(() => {
+        console.log("isAuthorized:", isAuthorized)
+    }, [isAuthorized])
+
     const refreshToken = async () => {
         const refreshToken = localStorage.getItem(REFRESH_TOKEN)
         try {
@@ -50,6 +54,7 @@ function ProtectedRoute({ children }) {
                 localStorage.setItem(ACCESS_TOKEN, res.data.access)
                 setIsAuthorized(true)
             } else {
+                console.log("Unexpected response from API: ", res)
                 setIsAuthorized(false)
             }
         } catch (error) {
@@ -58,10 +63,13 @@ function ProtectedRoute({ children }) {
         }
     }
 
-    if (isAuthorized === null)
-        return <div data-testid="loading">Loading...</div>
-
-    return isAuthorized ? children : <Navigate to="/login" />
+    return isAuthorized === null ? (
+        <div data-testid="loading">Loading...</div>
+    ) : isAuthorized ? (
+        children
+    ) : (
+        <Navigate to="/login" />
+    )
 }
 
 ProtectedRoute.propTypes = {

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import "../styles/GlucoseReading.css"
-// import axios from 'axios'
-// import { ACCESS_TOKEN } from '../constants'
 
 const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
     const [glucoseValue, setGlucoseValue] = useState(
@@ -28,16 +26,17 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
     }, [data])
 
     // Determine border color based on glucose value
-    let borderColor = "#3AA246" // Green (Good range)
-    if (glucoseValue === 0.0)
-        borderColor = "#B3B3B3" // Grey (No data or zero reading)
-    else if (glucoseValue > 0.0 && glucoseValue < glucoseMin)
+    let borderColor = "#B3B3B3" // Grey (No data or zero reading)
+    if (glucoseValue > 0.0 && glucoseValue < glucoseMin)
         borderColor = "#B53A3A" // Red (Low)
+    else if (glucoseValue > glucoseMin && glucoseValue < glucoseMax)
+        borderColor = "#3AA246" // Green (Good range)
     else if (glucoseValue > glucoseMax) borderColor = "#CBA63F" // Yellow (High)
 
     return (
         <div className="glucose-container">
             <div
+                data-testid="glucose-circle"
                 className="glucose-circle"
                 style={{ borderColor: borderColor }} // Apply dynamic border color
             >

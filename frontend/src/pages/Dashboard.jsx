@@ -309,6 +309,7 @@ const Dashboard = () => {
                     basalrate={userProfile.basalRate}
                     emEnabled={userProfile.emEnabled}
                     iob={userProfile.iob}
+                    isRunning={isRunning}
                     // bolusMax={userProfile.bolusMax}
                     // currentGlucose={glucoseData[glucoseData.length - 1].glucose}
                     // carbRatio={userProfile.carbRatio}

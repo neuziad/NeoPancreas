@@ -90,6 +90,7 @@ function Form({ route, method }) {
                         type="date"
                         value={dob}
                         onChange={(e) => setDob(e.target.value)}
+                        placeholder="Date of Birth"
                     />
                 </>
             )}

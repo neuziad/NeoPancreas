@@ -5,7 +5,7 @@ import { useState } from "react"
 // import BolusModal from './Modals'
 import "../styles/BasalAndBolus.css"
 
-const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
+const BasalAndBolus = ({ basalrate, emEnabled, iob, isRunning }) => {
     const [localEmEnabled, setLocalEmEnabled] = useState(emEnabled)
     // const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -39,7 +39,9 @@ const BasalAndBolus = ({ basalrate, emEnabled, iob }) => {
                     <span style={{ color: "#4A4A4A", fontSize: "0.8rem" }}>
                         IOB
                     </span>{" "}
-                    <strong style={{ fontSize: "1.3rem" }}>{iob}U</strong>{" "}
+                    <strong style={{ fontSize: "1.3rem" }}>
+                        {isRunning ? `${iob}U` : "--U"}
+                    </strong>{" "}
                     approx.
                 </span>
             </div>
@@ -101,12 +103,13 @@ BasalAndBolus.propTypes = {
     basalrate: PropTypes.number.isRequired,
     emEnabled: PropTypes.bool.isRequired,
     iob: PropTypes.number.isRequired,
-    bolusMax: PropTypes.number.isRequired,
-    currentGlucose: PropTypes.number.isRequired,
-    carbRatio: PropTypes.number.isRequired,
-    correctionFactor: PropTypes.number.isRequired,
-    glucoseTarget: PropTypes.number.isRequired,
-    glucoseMin: PropTypes.number.isRequired,
+    isRunning: PropTypes.bool.isRequired,
+    // bolusMax: PropTypes.number.isRequired,
+    // currentGlucose: PropTypes.number.isRequired,
+    // carbRatio: PropTypes.number.isRequired,
+    // correctionFactor: PropTypes.number.isRequired,
+    // glucoseTarget: PropTypes.number.isRequired,
+    // glucoseMin: PropTypes.number.isRequired,
 }
 
 export default BasalAndBolus

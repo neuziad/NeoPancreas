@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react"
-import { BrowserRouter as Router } from "react-router-dom"
+import { BrowserRouter } from "react-router-dom"
 import ProtectedRoute from "../components/ProtectedRoute"
 import api from "../api"
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants"
@@ -14,6 +14,7 @@ jest.mock("jwt-decode")
 describe("Protected Routes", () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        localStorage.clear()
         localStorage.setItem(ACCESS_TOKEN, "oldAccessToken")
         localStorage.setItem(REFRESH_TOKEN, "refreshToken")
     })
@@ -21,7 +22,7 @@ describe("Protected Routes", () => {
     it("should render children if the token is valid", async () => {
         // Valid non-expired token
         jwtDecode.mockReturnValueOnce({
-            exp: Math.floor(Date.now() / 1000) + 4700,
+            exp: Math.floor(Date.now() / 1000) + 3600,
         })
 
         // Checks if redirects to dashboard (root directory)
@@ -30,6 +31,7 @@ describe("Protected Routes", () => {
         })
     })
 
+    // TO-DO: Fix this invalid token protected route test
     it("should redirect to login if the token is invalid or expired", async () => {
         // Invalid expired token
         jwtDecode.mockReturnValueOnce({
@@ -40,16 +42,15 @@ describe("Protected Routes", () => {
         api.post.mockResolvedValueOnce({ status: 401 })
 
         render(
-            <Router>
+            <BrowserRouter>
                 <ProtectedRoute>
                     <div>Protected Content</div>
                 </ProtectedRoute>
-            </Router>
+            </BrowserRouter>
         )
 
         // Ensure the redirection to /login is triggered
         await waitFor(() => {
-            screen.debug()
             expect(window.location.pathname).toBe("/login")
         })
     })
@@ -67,11 +68,11 @@ describe("Protected Routes", () => {
         })
 
         render(
-            <Router>
+            <BrowserRouter>
                 <ProtectedRoute>
                     <div>Protected Content</div>
                 </ProtectedRoute>
-            </Router>
+            </BrowserRouter>
         )
 
         // Ensure that the API call to refresh the token is made
@@ -89,11 +90,11 @@ describe("Protected Routes", () => {
         })
 
         render(
-            <Router>
+            <BrowserRouter>
                 <ProtectedRoute>
                     <div>Protected Content</div>
                 </ProtectedRoute>
-            </Router>
+            </BrowserRouter>
         )
 
         // Wait for the loading state to be shown before the rest of the content

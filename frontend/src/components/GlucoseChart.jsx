@@ -12,7 +12,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
     const startTime = Math.max(0, nowInMinutes - timeScale * 60)
     return (
-        <div className="body">
+        <div data-testid="scatter-chart" className="body">
             {/* Chart */}
             {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={440}>

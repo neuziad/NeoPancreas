@@ -16,6 +16,7 @@
         "@emotion/styled": "^11.14.0",
         "@mui/material": "^6.4.7",
         "@octokit/request": "^9.2.2",
+        "@testing-library/user-event": "^14.6.1",
         "axios": "^1.7.9",
         "jwt-decode": "^4.0.0",
         "prop-types": "^15.8.1",
@@ -54,6 +55,7 @@
         "jest-mock-axios": "^4.8.0",
         "jest-websocket-mock": "^2.5.0",
         "prettier": "3.5.0",
+        "resize-observer-polyfill": "^1.5.1",
         "vite": "^6.1.0",
         "vite-plugin-mkcert": "^1.17.6"
     }
