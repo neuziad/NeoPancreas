@@ -11,9 +11,10 @@ import {
     getSimulationStatus,
 } from "../components/Simulations"
 import { ToggleButton, ToggleButtonGroup } from "@mui/material"
+import { SensorModal, PumpModal, BolusModal } from "../components/Modals"
 
 const WEBSOCKET_URL =
-    import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8000/ws/glucose/"
+    import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8001/ws/glucose/"
 
 const Dashboard = () => {
     const [userProfile, setUserProfile] = useState(null)
@@ -24,6 +25,10 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false)
     const [glucoseData, setGlucoseData] = useState([])
     const [currentUser, setCurrentUser] = useState([])
+    const [isSensorOpen, setIsSensorOpen] = useState(false)
+    const [isPumpOpen, setIsPumpOpen] = useState(false)
+    const [isBolusOpen, setIsBolusOpen] = useState(false)
+    let carbs = 0
 
     // Fetch status of simulation
     useEffect(() => {
@@ -141,7 +146,7 @@ const Dashboard = () => {
         }
 
         fetchUser()
-    }, [currentUser])
+    }, [])
 
     // WebSocket for real-time updates
     useEffect(() => {
@@ -255,14 +260,58 @@ const Dashboard = () => {
             {/* Header */}
             <div className="dash-header">
                 <div>
-                    <img src="/sensorsetting.svg" className="header-icon" />
-                    <img src="/pumpsetting.svg" className="header-icon" />
+                    <img
+                        src="/sensorsetting.svg"
+                        className="header-icon"
+                        onClick={() => setIsSensorOpen(true)}
+                        alt="Sensor Settings"
+                    />
+                    <img
+                        src="/pumpsetting.svg"
+                        className="header-icon"
+                        onClick={() => setIsPumpOpen(true)}
+                        alt="Pump Settings"
+                    />
                 </div>
                 <h1 className="header-title">
                     {currentUser.first_name} {currentUser.last_name}&apos;s
                     Dashboard
                 </h1>
             </div>
+
+            {/* Modals */}
+            <SensorModal
+                isOpen={isSensorOpen}
+                onClose={() => setIsSensorOpen(false)}
+                diabeticProfile={userProfile.diabeticProfile}
+                glucoseMin={userProfile.glucoseMin}
+                glucoseTarget={userProfile.glucoseTarget}
+                glucoseMax={userProfile.glucoseMax}
+                correctionFactor={userProfile.correctionFactor}
+                setIsSensorOpen={() => setIsSensorOpen(false)}
+            />
+            <PumpModal
+                isOpen={isPumpOpen}
+                onClose={() => setIsPumpOpen(false)}
+                basalRate={userProfile.basalRate}
+                maxIOB={userProfile.maxIOB}
+                insulinDuration={userProfile.insulinDuration}
+                setIsPumpOpen={() => setIsPumpOpen(false)}
+            />
+            <BolusModal
+                isOpen={isBolusOpen}
+                onClose={() => setIsBolusOpen(false)}
+                emEnabled={userProfile.emEnabled}
+                carbs={carbs}
+                currentGlucose={glucoseData}
+                carbRatio={userProfile.carbRatio}
+                correctionFactor={userProfile.correctionFactor}
+                glucoseTarget={userProfile.glucoseTarget}
+                glucoseMin={userProfile.glucoseMin}
+                insulinOnBoard={userProfile.iob}
+                maxBolus={userProfile.bolusMax}
+                setIsBolusOpen={() => setIsBolusOpen(false)}
+            />
 
             <div
                 style={{
@@ -302,7 +351,7 @@ const Dashboard = () => {
                         background:
                             "linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)",
                     }}
-                ></div>
+                />
 
                 {/* Right section: IOB, exercise mode, bolus, basal */}
                 <BasalAndBolus
@@ -310,12 +359,7 @@ const Dashboard = () => {
                     emEnabled={userProfile.emEnabled}
                     iob={userProfile.iob}
                     isRunning={isRunning}
-                    // bolusMax={userProfile.bolusMax}
-                    // currentGlucose={glucoseData[glucoseData.length - 1].glucose}
-                    // carbRatio={userProfile.carbRatio}
-                    // correctionFactor={userProfile.correctionFactor}
-                    // glucoseTarget={userProfile.glucoseTarget}
-                    // glucoseMin={userProfile.glucoseMin}
+                    onOpenBolus={() => setIsBolusOpen(true)}
                 />
             </div>
 
@@ -344,7 +388,7 @@ const Dashboard = () => {
                         justifyContent: "flex-start",
                         height: "2.3rem",
                         marginTop: "0.9rem",
-                        marginRight: "0.8rem",
+                        marginRight: "2.8rem",
                     }}
                 >
                     {[4, 8, 12, 24].map((hrs) => (

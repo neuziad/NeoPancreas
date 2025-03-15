@@ -114,12 +114,12 @@ def create_reading(*args):
             new_reading = GlucoseReading(patient=user.profile)
 
         # Update reading data
-        new_reading.reading = float(new_reading.adjust_for_noise(reading_value))
+        new_reading.reading = float(new_reading.adjust_for_noise(reading_value)) if new_reading.adjust_for_noise(reading_value) is not None else 0
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
-        new_reading.basal_injected = Decimal(user.profile.titrate_basal())
-        new_reading.bolus_injected = Decimal(
-            user.profile.titrate_bolus(_carbs_on_board) if _is_bolus_called else 0
+        new_reading.basal_injected = Decimal(str(user.profile.titrate_basal()))
+        new_reading.bolus_injected = Decimal(str(
+            user.profile.titrate_bolus(_carbs_on_board)) if _is_bolus_called else 0
         )
 
         # Update the timestamp to the current time so that it reflects today's reading
