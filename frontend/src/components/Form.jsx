@@ -1,22 +1,22 @@
-import { useState } from 'react'
-import api from '../api'
-import { useNavigate } from 'react-router-dom'
-import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants'
-import '../styles/Form.css'
-import LoadingIndicator from './LoadingIndicator'
+import { useState } from "react"
+import api from "../api"
+import { useNavigate } from "react-router-dom"
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants"
+import "../styles/Form.css"
+import LoadingIndicator from "./LoadingIndicator"
 
 // eslint-disable-next-line react/prop-types
 function Form({ route, method }) {
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
-    const [email, setEmail] = useState('')
-    const [dob, setDob] = useState('')
+    const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
+    const [firstName, setFirstName] = useState("")
+    const [lastName, setLastName] = useState("")
+    const [email, setEmail] = useState("")
+    const [dob, setDob] = useState("")
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
-    const name = method === 'login' ? 'Login' : 'Register'
+    const name = method === "login" ? "Login" : "Register"
 
     const handleSubmit = async (e) => {
         setLoading(true)
@@ -24,7 +24,7 @@ function Form({ route, method }) {
 
         // Format date of birth
         const formattedDob = dob
-            ? new Date(dob).toISOString().split('T')[0]
+            ? new Date(dob).toISOString().split("T")[0]
             : null
 
         // Prepare data payload
@@ -43,15 +43,15 @@ function Form({ route, method }) {
 
         try {
             const res = await api.post(route, payload)
-            if (method === 'login') {
+            if (method === "login") {
                 localStorage.setItem(ACCESS_TOKEN, res.data.access)
                 localStorage.setItem(REFRESH_TOKEN, res.data.refresh)
-                navigate('/')
+                navigate("/")
             } else {
-                navigate('/login')
+                navigate("/login")
             }
         } catch (error) {
-            console.log('Error: ', error.response?.data)
+            console.log("Error: ", error.response?.data)
             alert(error.response ? error.response.data.detail : error.message)
         } finally {
             setLoading(false)
@@ -62,7 +62,7 @@ function Form({ route, method }) {
         <form onSubmit={handleSubmit} className="form-container">
             <h1>{name}</h1>
 
-            {method === 'register' && (
+            {method === "register" && (
                 <>
                     <input
                         className="form-input"
@@ -90,6 +90,7 @@ function Form({ route, method }) {
                         type="date"
                         value={dob}
                         onChange={(e) => setDob(e.target.value)}
+                        placeholder="Date of Birth"
                     />
                 </>
             )}

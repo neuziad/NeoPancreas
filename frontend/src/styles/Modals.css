@@ -1,0 +1,105 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    height: 92vh;
+    text-align: center;
+    position: relative;
+}
+
+.bolus-modal {
+    background: #bcd4eb;
+}
+
+.sensor-modal {
+    background: #f5e1c8;
+}
+
+.pump-modal {
+    background: #eac7eb;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.input-box,
+.total-bolus {
+    width: 100%;
+    max-width: 250px;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.inject-btn {
+    background: #0056b3;
+    color: white;
+    border-radius: 5%;
+    border: 3px solid #000;
+    width: 75%;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    padding-top: 3%;
+    margin-top: 4%;
+}
+
+.inject-btn:hover {
+    background: #14283f;
+}
+
+.sensor-save-btn {
+    background: #ae977b;
+    color: white;
+    border-radius: 5%;
+    border: 3px solid #000;
+    width: 75%;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    padding-top: 3%;
+    margin-top: 4%;
+}
+
+.pump-save-btn {
+    background: #a47bae;
+    color: white;
+    border-radius: 5%;
+    border: 3px solid #000;
+    width: 75%;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    padding-top: 3%;
+    margin-top: 4%;
+}
+
+.pump-save-btn:hover {
+    background: #4f3855;
+}
+
+.sensor-save-btn:hover {
+    background: #4c4032;
+}

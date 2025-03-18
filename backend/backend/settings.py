@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "channels",
+    "daphne",
     "django.contrib.staticfiles",
     "api",
     "simulator",
@@ -68,6 +70,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     "django_celery_beat",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -113,6 +116,18 @@ DATABASES = {
     )
 }
 
+# ASGI application
+ASGI_APPLICATION = "backend.asgi.application"
+
+# Redis backend for real-time communication
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # Ensure Redis is running
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

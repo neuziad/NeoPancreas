@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -18,10 +19,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend .
 
 # Collect static files
+RUN python manage.py migrate --noinput
 RUN python manage.py collectstatic --noinput
 
-# Expose the Django development port
-EXPOSE 8000
+# Expose ports for HTTP and WebSockets
+EXPOSE 8000 8001
 
-# Run migrations and start the server
-CMD ["sh", "-c", "python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000"]
+# Copy the supervisor config file
+COPY backend/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Start supervisor to run both servers
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

@@ -1,15 +1,94 @@
 from django.contrib.auth.models import User
 from rest_framework import generics
-from .serializers import UserSerializer, GlucoseSerializer
+from .serializers import SensorSettingsSerializer, UserProfileSerializer, UserSerializer, PumpSettingsSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import GlucoseReading
+from .models import GlucoseReading, UserProfile
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.http import JsonResponse
 import json
 from rest_framework.decorators import api_view
 import logging
+from django.utils.timezone import now, timedelta
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 logger = logging.getLogger(__name__)
+
+
+class GlucoseReadingList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Fetch glucose readings for the authenticated user."""
+        logger.info("Headers received:", request.headers)
+        user = request.user  # Get the authenticated user from JWT token
+
+        # Retrieve time range from query parameters (default to 4 hours)
+        timespan = request.query_params.get("timespan", 4)
+
+        try:
+            timespan = int(timespan)
+        except ValueError:
+            return Response(
+                {"error": "Invalid timespan"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Calculate start time
+        start_time = now() - timedelta(hours=timespan)
+
+        # Filter readings for the authenticated user only
+        readings = GlucoseReading.objects.filter(
+            patient=user.profile, timestamp__gte=start_time
+        ).order_by("timestamp")
+
+        # Serialize and return the data
+        data = [
+            {
+                "timestamp": r.timestamp.strftime("%H:%M"),
+                "glucose": r.reading,
+                "trend": r.trend or "NODATA",
+                "bolus_injected": r.bolus_injected or 0,
+                "basal_injected": r.basal_injected or 0,
+            }
+            for r in readings
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Retrieve the authenticated user's profile data"""
+        try:
+            user = request.user
+            user_profile = UserProfile.objects.get(user=user)
+
+            # Ensure the serializer returns all fields
+            serializer = UserProfileSerializer(user_profile)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            """Retrieve the authenticated user's data"""
+            return Response(UserSerializer(request.user).data)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class RegisterUserView(generics.CreateAPIView):
@@ -17,6 +96,36 @@ class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+
+class SensorSettingsView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SensorSettingsSerializer
+    http_method_names = ["patch"]
+
+    def get_object(self):
+        return self.request.user.profile
+
+    def patch(self, request, *args, **kwargs):
+        print("📩 Received PATCH request for sensor settings!")
+        print("Headers:", dict(request.headers))
+        print("Body:", request.data)
+
+        return super().patch(request, *args, **kwargs)
+    
+class PumpSettingsView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PumpSettingsSerializer
+    http_method_names = ["patch"]
+
+    def get_object(self):
+        return self.request.user.profile
+    
+    def patch(self, request, *args, **kwargs):
+        print("📩 Received PATCH request for pump settings!")
+        print("Headers:", dict(request.headers))
+        print("Body:", request.data)
+
+        return super().patch(request, *args, **kwargs)
 
 @api_view(["POST"])
 def start_simulation(request, user_id):
@@ -103,3 +212,55 @@ def simulation_status(request, user_id):
 
     is_running = PeriodicTask.objects.filter(name=task_name).exists()
     return JsonResponse({"running": is_running})
+
+
+@api_view(["GET"])
+def get_glucose_readings(request):
+    """Fetch glucose readings for the logged-in user within a time range"""
+    user = request.user
+    timespan = int(request.GET.get("timespan", 4))
+    start_time = now() - timedelta(hours=timespan)
+
+    # Retrieve readings from the database, including trend and insulin data
+    readings = GlucoseReading.objects.filter(
+        user=user, timestamp__gte=start_time
+    ).order_by("timestamp")
+
+    # Format the data to include trend, bolus, and basal data
+    data = [
+        {
+            "timestamp": r.timestamp.strftime("%H:%M"),
+            "glucose": r.value,
+            "trend": r.trend,
+            "bolus_injected": r.bolus_injected or 0,
+            "basal_injected": r.basal_injected or 0,
+        }
+        for r in readings
+    ]
+
+    return Response(data)
+
+
+@api_view(["GET"])
+def toggle_exercise_mode(request):
+    user = request.user
+    user.profile.em_enabled = not user.profile.em_enabled
+    user.profile.save()
+    return JsonResponse({"success": True})
+
+
+@api_view(["POST"])
+def inject_bolus(request):
+    """API endpoint to store pending bolus for the next scheduled reading."""
+    user = request.user.profile
+    bolus_dose = request.data.get("bolus", 0)  # Get bolus from frontend
+
+    try:
+        # Store the bolus in the profile for the next scheduled reading
+        user.pending_bolus = bolus_dose
+        user.save()
+
+        return Response({"message": "Bolus recorded successfully!"}, status=200)
+    except Exception as e:
+        logger.error(f"Error storing bolus: {e}")
+        return Response({"error": "Failed to record bolus."}, status=500)

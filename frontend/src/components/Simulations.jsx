@@ -1,136 +1,109 @@
-import { jwtDecode } from 'jwt-decode'
-import { ACCESS_TOKEN } from '../constants'
-import api from '../api'
+import { jwtDecode } from "jwt-decode"
+import { ACCESS_TOKEN } from "../constants"
+import api from "../api"
 
-export async function startSimulation() {
+// Function to get the authenticated user's ID
+function getUserId() {
     const token = localStorage.getItem(ACCESS_TOKEN)
+    if (!token) return null
 
-    if (!token) {
-        alert('You need to log in first!')
-        return
+    try {
+        const decoded = jwtDecode(token)
+        return decoded.user_id || null
+    } catch (error) {
+        console.error("Error decoding token:", error)
+        return null
+    }
+}
+
+// Function to start the simulation
+export async function startSimulation() {
+    const userId = getUserId()
+    if (!userId) {
+        window.alert("You need to log in first!")
+        return false
     }
 
     try {
-        // Decode JWT to get user ID
-        const decoded = jwtDecode(token)
-        const userId = decoded.user_id
-
-        if (!userId) {
-            alert('Invalid token: User ID missing.')
-            return
-        }
-
-        // console.log('Decoded JWT:', decoded)
-
-        // Send a POST request with the Authorization header
         const response = await api.post(
             `/api/start-simulation/${userId}/`,
             null,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
                 },
             }
         )
-
-        console.log('Simulation started:', response.data)
-        alert('Simulation started successfully!')
+        console.log("Simulation started:", response.data)
+        return true
     } catch (error) {
-        console.error('Error starting simulation:', error)
-
-        if (error.response) {
-            alert(
-                `Error: ${error.response.data.detail || 'Failed to start simulation.'}`
-            )
-        } else {
-            alert('An error occurred. Please try again.')
-        }
+        console.error("Error starting simulation:", error)
+        return false
     }
 }
 
+// Function to stop the simulation
 export async function stopSimulation() {
-    const token = localStorage.getItem(ACCESS_TOKEN)
-
-    if (!token) {
-        alert('You need to log in first!')
-        return
+    const userId = getUserId()
+    if (!userId) {
+        window.alert("You need to log in first!")
+        return false
     }
 
     try {
-        // Decode JWT to get user ID
-        const decoded = jwtDecode(token)
-        const userId = decoded.user_id
-
-        if (!userId) {
-            alert('Invalid token: User ID missing.')
-            return
-        }
-
-        // console.log('Decoded JWT:', decoded)
-
-        // Send a POST request with the Authorization header
         const response = await api.post(
             `/api/stop-simulation/${userId}/`,
             null,
             {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
                 },
             }
         )
-
-        console.log('Simulation stopped:', response.data)
-        alert('Simulation stopped successfully!')
+        console.log("Simulation stopped:", response.data)
+        return true
     } catch (error) {
-        console.error('Error stopping simulation:', error)
-
-        if (error.response) {
-            alert(
-                `Error: ${error.response.data.detail || 'Failed to stop simulation.'}`
-            )
-        } else {
-            alert('An error occurred. Please try again.')
-        }
+        console.error("Error stopping simulation:", error)
+        return false
     }
 }
 
+// Function to check simulation status
 export async function getSimulationStatus() {
-    const token = localStorage.getItem(ACCESS_TOKEN)
-
-    if (!token) {
-        alert('You need to log in first!')
-        return
+    const userId = getUserId()
+    if (!userId) {
+        window.alert("You need to log in first!")
+        return false
     }
 
     try {
-        // Decode JWT to get user ID
-        const decoded = jwtDecode(token)
-        const userId = decoded.user_id
-
-        if (!userId) {
-            alert('Invalid token: User ID missing.')
-            return
-        }
-
-        // Send a GET request with the Authorization header
         const response = await api.get(`/api/simulation-status/${userId}/`, {
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
             },
         })
-
-        console.log('Simulation status:', response.data)
-        const status = response.data.running ? 'running' : 'stopped'
-        alert(`Simulation status: ${status}`)
+        return response.data.running
     } catch (error) {
-        console.error('Error fetching simulation status:', error)
-
-        if (error.response) {
-            alert(
-                `Error: ${error.response.data.detail || 'Failed to fetch simulation status.'}`
-            )
-        } else {
-            alert('An error occurred. Please try again.')
-        }
+        console.error("Error fetching simulation status:", error)
+        return false
     }
+}
+
+// Function to toggle simulation state
+export async function toggleSimulation() {
+    const isRunning = await getSimulationStatus()
+    if (isRunning) {
+        const stopped = await stopSimulation()
+        if (stopped) window.alert("Simulation stopped successfully!")
+    } else {
+        const started = await startSimulation()
+        if (started) window.alert("Simulation started successfully!")
+    }
+}
+
+export default {
+    startSimulation,
+    stopSimulation,
+    getSimulationStatus,
+    toggleSimulation,
 }

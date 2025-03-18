@@ -1,5 +1,7 @@
+from unittest.mock import patch
 from django.test import TestCase
 from django.contrib.auth.models import User
+import redis
 from api.models import UserProfile, GlucoseReading
 from api.serializers import UserProfileSerializer, UserSerializer, GlucoseSerializer
 from datetime import date
@@ -44,22 +46,46 @@ class UserProfileSerializerTest(TestCase):
 
 
 class UserSerializerTest(TestCase):
+    def setUp(self):
+        """Create a user and associated UserProfile for testing."""
+        self.user = User.objects.create_user(
+            username="santaclaus", password="t35T!P@ssw0rd"
+        )
+
     def test_create_user_with_profile(self):
         """Ensure UserSerializer correctly creates a user and profile."""
+
         data = {
             "username": "newuser",
             "password": "testpassword",
+            "first_name": "John",
+            "last_name": "Doe",
             "email": "newuser@example.com",
             "profile": {
-                "dob": "2000-01-01",
+                "dob": date(2000, 1, 1),
                 "basal_rate": 1.2,
+                "glucose_target": 6.4,
+                "glucose_min": 3.9,
+                "glucose_max": 11.0,
+                "bolus_max": 15.0,
+                "carb_ratio": 10.0,
+                "insulin_duration": 240,
+                "iob": 0.0,
+                "cob": 0.0,
+                "max_iob": 25.0,
+                "em_enabled": False,
             },
         }
+
         serializer = UserSerializer(data=data)
-        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertTrue(serializer.is_valid(), serializer.errors)  # Validate input
 
         user = serializer.save()
+
+        # Verify user was created
         self.assertEqual(user.username, "newuser")
+
+        # Verify profile exists and is linked to the user
         self.assertTrue(UserProfile.objects.filter(user=user).exists())
 
     def test_invalid_user_serializer(self):
@@ -99,7 +125,8 @@ class GlucoseSerializerTest(TestCase):
             patient=self.profile, timestamp=now(), reading=6.5, trend="→"
         )
 
-    def test_glucose_serialization(self):
+    @patch("channels.layers.get_channel_layer")
+    def test_glucose_serialization(self, mock_get_channel_layer):
         """Ensure GlucoseSerializer correctly serializes glucose readings."""
         serializer = GlucoseSerializer(instance=self.reading)
         self.assertEqual(serializer.data["reading"], 6.5)
