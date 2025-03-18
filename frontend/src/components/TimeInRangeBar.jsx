@@ -70,10 +70,13 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         color: "white",
                         fontSize: "25px",
                         fontWeight: "bold",
-                        borderBottomLeftRadius: lowPercentage > 0 ? "0px" : "5px",
-                        borderBottomRightRadius: lowPercentage > 0 ? "0px" : "5px",
+                        borderBottomLeftRadius:
+                            lowPercentage > 0 ? "0px" : "5px",
+                        borderBottomRightRadius:
+                            lowPercentage > 0 ? "0px" : "5px",
                         borderTopLeftRadius: highPercentage > 0 ? "0px" : "5px",
-                        borderTopRightRadius: highPercentage > 0 ? "0px" : "5px",
+                        borderTopRightRadius:
+                            highPercentage > 0 ? "0px" : "5px",
                     }}
                 >
                     {inRangePercentage > 0

@@ -35,6 +35,27 @@ cd simulations
 echo will work on this later i promise lol
 ```
 
+## .env Attributes
+
+### Back-end
+
+```
+DJANGO_SETTINGS_MODULE="backend.settings"
+DJANGO_SECRET_KEY=django_password
+DEBUG=True
+REDIS_URL=redis_server_url
+CELERY_BROKER_URL=redis_server_url
+CELERY_RESULT_BACKEND=redis_server_url
+CELERY_LOG_LEVEL=DEBUG
+```
+
+### Front-end
+
+```
+VITE_API_URL=backend_url
+VITE_WEBSOCKET_URL=backend_url/different_port
+```
+
 ## Package docs
 
 - [React](https://react.dev/)

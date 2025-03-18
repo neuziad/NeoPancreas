@@ -160,14 +160,20 @@ class UserProfile(models.Model):
         elapsed_time = (current_time - self.last_update_time).total_seconds() / 60
 
         # Fetch past readings BEFORE updating last_update_time
-        readings = list(self.glucose_readings.filter(timestamp__gt=self.last_update_time)[:200])
+        readings = list(
+            self.glucose_readings.filter(timestamp__gt=self.last_update_time)[:200]
+        )
         self.last_update_time = current_time
 
         # Decay existing IOB
         if self.iob > 0:
             try:
-                decay_factor = Decimal(str(math.exp(-elapsed_time / self.insulin_duration)))
-                self.iob = (self.iob * decay_factor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                decay_factor = Decimal(
+                    str(math.exp(-elapsed_time / self.insulin_duration))
+                )
+                self.iob = (self.iob * decay_factor).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
             except (ValueError, InvalidOperation) as e:
                 logger.error(f"IOB decay calculation failed: {e}")
 
@@ -177,8 +183,16 @@ class UserProfile(models.Model):
 
         for reading in readings:
             try:
-                new_bolus += Decimal(reading.bolus_injected) if reading.bolus_injected is not None else Decimal("0")
-                new_basal += Decimal(reading.basal_injected) if reading.basal_injected is not None else Decimal("0")
+                new_bolus += (
+                    Decimal(reading.bolus_injected)
+                    if reading.bolus_injected is not None
+                    else Decimal("0")
+                )
+                new_basal += (
+                    Decimal(reading.basal_injected)
+                    if reading.basal_injected is not None
+                    else Decimal("0")
+                )
             except InvalidOperation as e:
                 logger.error(f"Invalid Decimal value in past readings: {e}")
 
@@ -186,7 +200,9 @@ class UserProfile(models.Model):
 
         if new_basal > 0:
             try:
-                basal_integral = new_basal * Decimal(str(1 - math.exp(-elapsed_time / self.insulin_duration)))
+                basal_integral = new_basal * Decimal(
+                    str(1 - math.exp(-elapsed_time / self.insulin_duration))
+                )
                 self.iob += basal_integral
             except (ValueError, InvalidOperation) as e:
                 logger.error(f"Basal integral calculation failed: {e}")

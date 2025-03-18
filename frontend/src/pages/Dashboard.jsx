@@ -11,7 +11,13 @@ import {
     getSimulationStatus,
 } from "../components/Simulations"
 import { ToggleButton, ToggleButtonGroup } from "@mui/material"
-import { SensorModal, PumpModal, BolusModal } from "../components/Modals"
+import {
+    SensorModal,
+    PumpModal,
+    BolusModal,
+    FooterModals,
+} from "../components/Modals"
+import AlertMonitor from "../components/Alerts"
 
 const WEBSOCKET_URL =
     import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8001/ws/glucose/"
@@ -240,6 +246,11 @@ const Dashboard = () => {
             </div>
 
             {/* Modals */}
+            <AlertMonitor
+                glucoseData={glucoseData}
+                glucoseMin={userProfile.glucoseMin}
+                glucoseMax={userProfile.glucoseMax}
+            />
             <SensorModal
                 isOpen={isSensorOpen}
                 onClose={() => setIsSensorOpen(false)}
@@ -248,6 +259,7 @@ const Dashboard = () => {
                 glucoseTarget={userProfile.glucoseTarget}
                 glucoseMax={userProfile.glucoseMax}
                 correctionFactor={userProfile.correctionFactor}
+                fetchUserProfile={fetchUserProfile}
                 setIsSensorOpen={() => setIsSensorOpen(false)}
             />
             <PumpModal
@@ -258,6 +270,7 @@ const Dashboard = () => {
                 maxBolus={userProfile.bolusMax}
                 insulinDuration={userProfile.insulinDuration}
                 carbRatio={userProfile.carbRatio}
+                fetchUserProfile={fetchUserProfile}
                 setIsPumpOpen={() => setIsPumpOpen(false)}
             />
             <BolusModal
@@ -266,11 +279,15 @@ const Dashboard = () => {
                 emEnabled={userProfile.emEnabled}
                 carbs={carbs}
                 currentGlucose={
-                    glucoseData.length > 0 && typeof glucoseData[glucoseData.length - 1].glucose === 'number'
+                    glucoseData.length > 0 &&
+                    typeof glucoseData[glucoseData.length - 1].glucose ===
+                        "number"
                         ? glucoseData[glucoseData.length - 1].glucose
-                        : (timeInRangeData.length > 0 && typeof timeInRangeData[timeInRangeData.length - 1].glucose === 'number'
-                            ? timeInRangeData[timeInRangeData.length - 1].glucose
-                            : undefined)
+                        : timeInRangeData.length > 0 &&
+                            typeof timeInRangeData[timeInRangeData.length - 1]
+                                .glucose === "number"
+                          ? timeInRangeData[timeInRangeData.length - 1].glucose
+                          : undefined // On start-up, there will be nothing in glucoseData, so we get the most recent historic data in such a case
                 }
                 carbRatio={userProfile.carbRatio}
                 correctionFactor={userProfile.correctionFactor}
@@ -418,10 +435,7 @@ const Dashboard = () => {
             />
 
             {/* Footer */}
-            {/* <div className="dash-footer">
-                <p>Copyright / Attributions</p>
-                <p>Medical Disclaimer</p>
-            </div> */}
+            <FooterModals />
         </div>
     )
 }

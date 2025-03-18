@@ -55,7 +55,9 @@ const BolusModal = ({
     }, [calculateBolus])
 
     // Handle changes
-    const handleCarbsChange = (e) => { setCarbs(e.target.value) }
+    const handleCarbsChange = (e) => {
+        setCarbs(e.target.value)
+    }
 
     // Handle the sending of bolus data to backend (or "injecting")
     const handleBolusInjection = async () => {
@@ -65,7 +67,7 @@ const BolusModal = ({
                 alert("You must be logged in to inject bolus.")
                 return
             }
-    
+
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/inject-bolus/`,
                 { bolus },
@@ -73,9 +75,11 @@ const BolusModal = ({
                     headers: { Authorization: `Bearer ${token}` },
                 }
             )
-    
+
             console.log("✅ Bolus injection recorded:", response.data)
-            alert("Bolus injection recorded! It will be applied for the next glucose reading.")
+            alert(
+                "Bolus injection recorded! It will be applied for the next glucose reading."
+            )
         } catch (error) {
             console.error("❌ Error injecting bolus:", error)
             alert("Failed to inject bolus.")
@@ -129,7 +133,6 @@ const BolusModal = ({
                             type="number"
                             step={0.5}
                             min={0}
-                            max={maxBolus}
                             value={carbs}
                             onChange={handleCarbsChange}
                             className="input-box"
@@ -226,11 +229,14 @@ const BolusModal = ({
                     type="text"
                     value={parseFloat(bolus).toFixed(2)}
                     readOnly
+                    max={maxBolus}
                     className="total-bolus"
                     style={{ width: "280px" }}
                 />
 
-                <button className="inject-btn" onClick={handleBolusInjection}>INJECT</button>
+                <button className="inject-btn" onClick={handleBolusInjection}>
+                    INJECT
+                </button>
             </div>
         </div>
     )
@@ -244,6 +250,7 @@ const SensorModal = ({
     glucoseTarget: initialGlucoseTarget,
     glucoseMax: initialGlucoseMax,
     correctionFactor: initialCorrectionFactor,
+    fetchUserProfile,
 }) => {
     const [glucoseMin, setGlucoseMin] = useState(initialGlucoseMin)
     const [glucoseTarget, setGlucoseTarget] = useState(initialGlucoseTarget)
@@ -304,6 +311,7 @@ const SensorModal = ({
             console.log("✅ Sensor settings updated:", response.data)
             alert("Settings saved successfully!")
 
+            fetchUserProfile()
         } catch (error) {
             console.error(
                 "❌ Error saving sensor settings:",
@@ -584,7 +592,8 @@ const PumpModal = ({
     maxBolus: initialMaxBolus,
     maxIOB: initialMaxIOB,
     insulinDuration: initialInsulinDuration,
-    carbRatio: initialCarbRatio
+    carbRatio: initialCarbRatio,
+    fetchUserProfile,
 }) => {
     const [basalRate, setBasalRate] = useState(initialBasalRate)
     const [maxBolus, setMaxBolus] = useState(initialMaxBolus)
@@ -648,6 +657,8 @@ const PumpModal = ({
 
             console.log("✅ Pump settings updated:", response.data)
             alert("Settings saved successfully!")
+
+            fetchUserProfile()
         } catch (error) {
             console.error(
                 "❌ Error saving pump settings:",
@@ -924,6 +935,64 @@ const PumpModal = ({
     )
 }
 
+const FooterModals = () => {
+    const [isAttributionsOpen, setIsAttributionsOpen] = useState(false)
+    const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false)
+
+    return (
+        <div className="dash-footer">
+            <p onClick={() => setIsAttributionsOpen(true)}>
+                Copyright / Attributions
+            </p>
+            <p onClick={() => setIsDisclaimerOpen(true)}>Medical Disclaimer</p>
+
+            {/* Copyright / Attributions Modal */}
+            {isAttributionsOpen && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setIsAttributionsOpen(false)}
+                >
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2>Copyright / Attributions</h2>
+                        <p>
+                            All rights reserved. Some assets may be attributed
+                            to their original creators.
+                        </p>
+                        <button onClick={() => setIsAttributionsOpen(false)}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Medical Disclaimer Modal */}
+            {isDisclaimerOpen && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setIsDisclaimerOpen(false)}
+                >
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2>Medical Disclaimer</h2>
+                        <p>
+                            This app does not provide medical advice. Always
+                            consult with a healthcare professional.
+                        </p>
+                        <button onClick={() => setIsDisclaimerOpen(false)}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
 BolusModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
@@ -946,6 +1015,7 @@ SensorModal.propTypes = {
     glucoseTarget: PropTypes.number.isRequired,
     glucoseMax: PropTypes.number.isRequired,
     correctionFactor: PropTypes.number.isRequired,
+    fetchUserProfile: PropTypes.func.isRequired,
 }
 
 PumpModal.propTypes = {
@@ -956,6 +1026,7 @@ PumpModal.propTypes = {
     maxIOB: PropTypes.number.isRequired,
     insulinDuration: PropTypes.number.isRequired,
     carbRatio: PropTypes.number.isRequired,
+    fetchUserProfile: PropTypes.func.isRequired,
 }
 
-export { BolusModal, SensorModal, PumpModal }
+export { BolusModal, SensorModal, PumpModal, FooterModals }

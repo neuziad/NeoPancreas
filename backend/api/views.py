@@ -1,6 +1,11 @@
 from django.contrib.auth.models import User
 from rest_framework import generics
-from .serializers import SensorSettingsSerializer, UserProfileSerializer, UserSerializer, PumpSettingsSerializer
+from .serializers import (
+    SensorSettingsSerializer,
+    UserProfileSerializer,
+    UserSerializer,
+    PumpSettingsSerializer,
+)
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import GlucoseReading, UserProfile
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
@@ -111,7 +116,8 @@ class SensorSettingsView(generics.UpdateAPIView):
         print("Body:", request.data)
 
         return super().patch(request, *args, **kwargs)
-    
+
+
 class PumpSettingsView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PumpSettingsSerializer
@@ -119,13 +125,14 @@ class PumpSettingsView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user.profile
-    
+
     def patch(self, request, *args, **kwargs):
         print("📩 Received PATCH request for pump settings!")
         print("Headers:", dict(request.headers))
         print("Body:", request.data)
 
         return super().patch(request, *args, **kwargs)
+
 
 @api_view(["POST"])
 def start_simulation(request, user_id):
