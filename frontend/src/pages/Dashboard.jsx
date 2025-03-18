@@ -37,35 +37,35 @@ const Dashboard = () => {
     }, [])
 
     // API fetching user profile attributes
-    useEffect(() => {
-        const fetchUserProfile = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/user-profile/`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                )
-                setUserProfile({
-                    glucoseMin: parseFloat(res.data.glucose_min),
-                    glucoseMax: parseFloat(res.data.glucose_max),
-                    glucoseTarget: parseFloat(res.data.glucose_target),
-                    basalRate: parseFloat(res.data.basal_rate),
-                    emEnabled: res.data.em_enabled,
-                    carbRatio: parseFloat(res.data.carb_ratio),
-                    correctionFactor: parseFloat(res.data.correction_factor),
-                    iob: parseFloat(res.data.iob),
-                    bolusMax: parseFloat(res.data.bolus_max),
-                    diabeticProfile: res.data.diabetic_profile,
-                    maxIOB: parseFloat(res.data.max_iob),
-                    insulinDuration: parseInt(res.data.insulin_duration),
-                })
-            } catch (error) {
-                console.error("❌ Error fetching user profile:", error)
-            }
+    const fetchUserProfile = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+            const res = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/user-profile/`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+            setUserProfile({
+                glucoseMin: parseFloat(res.data.glucose_min),
+                glucoseMax: parseFloat(res.data.glucose_max),
+                glucoseTarget: parseFloat(res.data.glucose_target),
+                basalRate: parseFloat(res.data.basal_rate),
+                emEnabled: res.data.em_enabled,
+                carbRatio: parseFloat(res.data.carb_ratio),
+                correctionFactor: parseFloat(res.data.correction_factor),
+                iob: parseFloat(res.data.iob),
+                bolusMax: parseFloat(res.data.bolus_max),
+                diabeticProfile: res.data.diabetic_profile,
+                maxIOB: parseFloat(res.data.max_iob),
+                insulinDuration: parseInt(res.data.insulin_duration),
+            })
+        } catch (error) {
+            console.error("❌ Error fetching user profile:", error)
         }
+    }
 
+    useEffect(() => {
         fetchUserProfile()
     }, [])
 
@@ -182,46 +182,7 @@ const Dashboard = () => {
             })
 
             // Update profile-related attributes
-            setUserProfile((prevProfile) => ({
-                ...prevProfile,
-                glucoseMin: prevProfile.glucose_min
-                    ? parseFloat(prevProfile.glucose_min)
-                    : prevProfile?.glucoseMin,
-                glucoseMax: prevProfile.glucose_max
-                    ? parseFloat(prevProfile.glucose_max)
-                    : prevProfile?.glucoseMax,
-                glucoseTarget: prevProfile.glucose_target
-                    ? parseFloat(prevProfile.glucose_target)
-                    : prevProfile?.glucoseTarget,
-                basalRate: prevProfile.basal_rate
-                    ? parseFloat(prevProfile.basal_rate)
-                    : prevProfile?.basalRate,
-                emEnabled:
-                    prevProfile.em_enabled !== undefined
-                        ? prevProfile.em_enabled
-                        : prevProfile?.emEnabled,
-                carbRatio: prevProfile.carb_ratio
-                    ? parseFloat(prevProfile.carb_ratio)
-                    : prevProfile?.carbRatio,
-                correctionFactor: prevProfile.correction_factor
-                    ? parseFloat(prevProfile.correction_factor)
-                    : prevProfile?.correctionFactor,
-                iob: prevProfile.iob
-                    ? parseFloat(prevProfile.iob)
-                    : prevProfile?.iob,
-                bolusMax: prevProfile.bolus_max
-                    ? parseFloat(prevProfile.bolus_max)
-                    : prevProfile?.bolusMax,
-                diabeticProfile: prevProfile.diabetic_profile
-                    ? prevProfile.diabetic_profile
-                    : prevProfile?.diabeticProfile,
-                maxIOB: prevProfile.max_iob
-                    ? parseFloat(prevProfile.max_iob)
-                    : prevProfile?.maxIOB,
-                insulinDuration: prevProfile.insulin_duration
-                    ? parseInt(prevProfile.insulin_duration)
-                    : prevProfile?.insulinDuration,
-            }))
+            fetchUserProfile()
 
             // Update data for time in range bar
             setTimeInRangeData((prev) => {
@@ -254,7 +215,6 @@ const Dashboard = () => {
         setLoading(false)
     }
 
-    // TO-DO: Add dashboard header
     return (
         <div>
             {/* Header */}
@@ -295,7 +255,9 @@ const Dashboard = () => {
                 onClose={() => setIsPumpOpen(false)}
                 basalRate={userProfile.basalRate}
                 maxIOB={userProfile.maxIOB}
+                maxBolus={userProfile.bolusMax}
                 insulinDuration={userProfile.insulinDuration}
+                carbRatio={userProfile.carbRatio}
                 setIsPumpOpen={() => setIsPumpOpen(false)}
             />
             <BolusModal
@@ -303,7 +265,13 @@ const Dashboard = () => {
                 onClose={() => setIsBolusOpen(false)}
                 emEnabled={userProfile.emEnabled}
                 carbs={carbs}
-                currentGlucose={glucoseData}
+                currentGlucose={
+                    glucoseData.length > 0 && typeof glucoseData[glucoseData.length - 1].glucose === 'number'
+                        ? glucoseData[glucoseData.length - 1].glucose
+                        : (timeInRangeData.length > 0 && typeof timeInRangeData[timeInRangeData.length - 1].glucose === 'number'
+                            ? timeInRangeData[timeInRangeData.length - 1].glucose
+                            : undefined)
+                }
                 carbRatio={userProfile.carbRatio}
                 correctionFactor={userProfile.correctionFactor}
                 glucoseTarget={userProfile.glucoseTarget}

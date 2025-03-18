@@ -22,28 +22,6 @@ getcontext().prec = 3
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-# Global variable to store if bolus injection as called, and how many carbs specified
-_is_bolus_called = False
-_carbs_on_board = 0
-
-
-# Setter functions
-def set_bolus_called(value):
-    global _is_bolus_called
-    _is_bolus_called = value
-
-
-def set_carbs_on_board(value):
-    global _carbs_on_board
-    _carbs_on_board = value
-
-
-# Consilidated global variable setting into one function for simplicity
-def call_bolus(carbs_on_board):
-    set_bolus_called(True)
-    set_carbs_on_board(carbs_on_board)
-
-
 # Create a reading and apply the necessary insulin
 @shared_task
 def create_reading(*args):
@@ -118,9 +96,12 @@ def create_reading(*args):
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
         new_reading.basal_injected = Decimal(str(user.profile.titrate_basal()))
-        new_reading.bolus_injected = Decimal(str(
-            user.profile.titrate_bolus(_carbs_on_board)) if _is_bolus_called else 0
-        )
+        new_reading.bolus_injected = Decimal(str(user.profile.pending_bolus))
+
+        # Reset pending bolus on user profile if bolus was injected
+        if user.profile.pending_bolus > 0:
+            user.profile.pending_bolus = 0
+            user.profile.save()
 
         # Update the timestamp to the current time so that it reflects today's reading
         # and save new reading
@@ -158,10 +139,6 @@ def create_reading(*args):
         # Update user's last update time
         user.profile.last_update_time = current_time
         user.profile.save()
-
-        # Reset bolus variables
-        set_bolus_called(False)
-        set_carbs_on_board(0)
 
         logger.info(f"{user.profile}\n{new_reading}")
 

@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from "react"
 import PropTypes from "prop-types"
 import "../styles/Modals.css"
+import axios from "axios"
+import { ACCESS_TOKEN } from "../constants"
 
 const EXERCISE_MODE_MODIFIER = 0.75
 
-/* TO-DO: Bolus modal needs revamping and titrate_bolus algorith has to be re-written to receive
- * bolus data from modal */
 const BolusModal = ({
     isOpen,
     onClose,
     emEnabled,
-    currentGlucose = 7.0,
+    currentGlucose,
     carbRatio,
     correctionFactor,
     glucoseTarget,
@@ -22,22 +22,20 @@ const BolusModal = ({
 
     // Function to calculate bolus
     const calculateBolus = useCallback(() => {
-        if (currentGlucose < glucoseMin) {
-            return 0
-        }
+        if (currentGlucose < glucoseMin) return 0
 
-        let bolusPerStep = carbs / carbRatio
-        bolusPerStep += (currentGlucose - glucoseTarget) / correctionFactor
+        let bolusDose = carbs / carbRatio
+        bolusDose += (currentGlucose - glucoseTarget) / correctionFactor
 
-        if (emEnabled) bolusPerStep *= EXERCISE_MODE_MODIFIER
+        if (emEnabled) bolusDose *= EXERCISE_MODE_MODIFIER
 
-        bolusPerStep -= insulinOnBoard
+        bolusDose -= insulinOnBoard
 
         // Ensure bolus is within limits
-        bolusPerStep = Math.max(0, Math.min(bolusPerStep, maxBolus))
+        bolusDose = Math.max(0, Math.min(bolusDose, maxBolus))
 
         // Round to nearest 0.05 for pump precision
-        return Math.round(bolusPerStep / 0.05) * 0.05
+        return Math.round(bolusDose / 0.05) * 0.05
     }, [
         carbs,
         carbRatio,
@@ -50,9 +48,39 @@ const BolusModal = ({
         glucoseMin,
     ])
 
+    const [bolus, setBolus] = useState(calculateBolus())
+
     useEffect(() => {
-        setCarbs(calculateBolus())
+        setBolus(calculateBolus())
     }, [calculateBolus])
+
+    // Handle changes
+    const handleCarbsChange = (e) => { setCarbs(e.target.value) }
+
+    // Handle the sending of bolus data to backend (or "injecting")
+    const handleBolusInjection = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+            if (!token) {
+                alert("You must be logged in to inject bolus.")
+                return
+            }
+    
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/inject-bolus/`,
+                { bolus },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+    
+            console.log("✅ Bolus injection recorded:", response.data)
+            alert("Bolus injection recorded! It will be applied for the next glucose reading.")
+        } catch (error) {
+            console.error("❌ Error injecting bolus:", error)
+            alert("Failed to inject bolus.")
+        }
+    }
 
     if (!isOpen) return null
 
@@ -99,8 +127,11 @@ const BolusModal = ({
                         <input
                             id="carbs-input"
                             type="number"
+                            step={0.5}
+                            min={0}
+                            max={maxBolus}
                             value={carbs}
-                            onChange={(e) => setCarbs(e.target.value)}
+                            onChange={handleCarbsChange}
                             className="input-box"
                             placeholder="Enter carbs (g)"
                         />
@@ -117,27 +148,66 @@ const BolusModal = ({
                         gap: 8,
                     }}
                 >
-                    <input
-                        type="text"
-                        value={`Current reading: ${currentGlucose} mmol/L`}
-                        readOnly
-                        className="input-box"
-                        style={{ width: "280px" }}
-                    />
-                    <input
-                        type="text"
-                        value={`Correction factor: ${correctionFactor} U`}
-                        readOnly
-                        className="input-box"
-                        style={{ width: "280px" }}
-                    />
-                    <input
-                        type="text"
-                        value={`Insulin on board: ${insulinOnBoard} U`}
-                        readOnly
-                        className="input-box"
-                        style={{ width: "280px" }}
-                    />
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
+                    >
+                        <img
+                            src="/currentreading.svg"
+                            alt="Current reading"
+                            style={{ width: 24, height: 24 }}
+                        />
+                        <input
+                            type="text"
+                            value={`Current reading: ${parseFloat(currentGlucose).toFixed(1)} mmol/L`}
+                            readOnly
+                            className="input-box"
+                            style={{ width: "240px" }}
+                        />
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
+                    >
+                        <img
+                            src="/correctfactor.svg"
+                            alt="Correction factor"
+                            style={{ width: 24, height: 24 }}
+                        />
+                        <input
+                            type="text"
+                            value={`Correction factor: ${correctionFactor} U`}
+                            readOnly
+                            className="input-box"
+                            style={{ width: "240px" }}
+                        />
+                    </div>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
+                    >
+                        <img
+                            src="/maxiob.svg"
+                            alt="Insulin on board"
+                            style={{ width: 24, height: 24 }}
+                        />
+                        <input
+                            type="text"
+                            value={`Insulin on board: ${insulinOnBoard} U`}
+                            readOnly
+                            className="input-box"
+                            style={{ width: "240px" }}
+                        />
+                    </div>
                 </div>
 
                 {/* Horizontal Separator */}
@@ -154,13 +224,13 @@ const BolusModal = ({
                 <h2>Total Bolus (U)</h2>
                 <input
                     type="text"
-                    value={carbs.toFixed(2)}
+                    value={parseFloat(bolus).toFixed(2)}
                     readOnly
                     className="total-bolus"
                     style={{ width: "280px" }}
                 />
 
-                <button className="inject-btn">INJECT</button>
+                <button className="inject-btn" onClick={handleBolusInjection}>INJECT</button>
             </div>
         </div>
     )
@@ -170,12 +240,80 @@ const SensorModal = ({
     isOpen,
     onClose,
     diabeticProfile,
-    glucoseMin,
-    glucoseTarget,
-    glucoseMax,
-    correctionFactor,
+    glucoseMin: initialGlucoseMin,
+    glucoseTarget: initialGlucoseTarget,
+    glucoseMax: initialGlucoseMax,
+    correctionFactor: initialCorrectionFactor,
 }) => {
+    const [glucoseMin, setGlucoseMin] = useState(initialGlucoseMin)
+    const [glucoseTarget, setGlucoseTarget] = useState(initialGlucoseTarget)
+    const [glucoseMax, setGlucoseMax] = useState(initialGlucoseMax)
+    const [correctionFactor, setCorrectionFactor] = useState(
+        initialCorrectionFactor
+    )
+
+    useEffect(() => {
+        console.log("Received props:", {
+            initialGlucoseMin,
+            initialGlucoseTarget,
+            initialGlucoseMax,
+            initialCorrectionFactor,
+        })
+        setGlucoseMin(initialGlucoseMin || 0)
+        setGlucoseTarget(initialGlucoseTarget || 0)
+        setGlucoseMax(initialGlucoseMax || 0)
+        setCorrectionFactor(initialCorrectionFactor || 0)
+    }, [
+        initialGlucoseMin,
+        initialGlucoseTarget,
+        initialGlucoseMax,
+        initialCorrectionFactor,
+    ])
+
+    // Handle changes
+    const handleGlucoseMinChange = (e) => setGlucoseMin(e.target.value)
+    const handleGlucoseTargetChange = (e) => setGlucoseTarget(e.target.value)
+    const handleGlucoseMaxChange = (e) => setGlucoseMax(e.target.value)
+    const handleCorrectionFactorChange = (e) =>
+        setCorrectionFactor(e.target.value)
+
     if (!isOpen) return null
+
+    const handleSave = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+
+            if (!token) {
+                alert("You must be logged in to save settings.")
+                return
+            }
+
+            const response = await axios.patch(
+                `${import.meta.env.VITE_API_URL}/api/sensor-settings/`,
+                {
+                    glucose_min: glucoseMin,
+                    glucose_target: glucoseTarget,
+                    glucose_max: glucoseMax,
+                    correction_factor: correctionFactor,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+
+            console.log("✅ Sensor settings updated:", response.data)
+            alert("Settings saved successfully!")
+
+        } catch (error) {
+            console.error(
+                "❌ Error saving sensor settings:",
+                error.response || error
+            )
+            alert(
+                `Failed to save settings: ${error.response?.data?.detail || "Unknown error"}`
+            )
+        }
+    }
 
     return (
         <div className="modal-overlay">
@@ -287,9 +425,12 @@ const SensorModal = ({
                         <input
                             id="glucose-min"
                             type="number"
+                            step={0.1}
+                            min={2.8}
+                            max={4.0}
                             value={glucoseMin}
+                            onChange={handleGlucoseMinChange}
                             className="input-box"
-                            placeholder="Minimum glucose level (mmol/L)"
                         />
                     </div>
                 </div>
@@ -329,9 +470,12 @@ const SensorModal = ({
                         <input
                             id="glucose-target"
                             type="number"
+                            step={0.1}
+                            min={5.5}
+                            max={8.5}
                             value={glucoseTarget}
+                            onChange={handleGlucoseTargetChange}
                             className="input-box"
-                            placeholder="Target glucose level (mmol/L)"
                         />
                     </div>
                 </div>
@@ -371,9 +515,12 @@ const SensorModal = ({
                         <input
                             id="glucose-max"
                             type="number"
+                            step={0.1}
+                            min={9.0}
+                            max={15.0}
                             value={glucoseMax}
+                            onChange={handleGlucoseMaxChange}
                             className="input-box"
-                            placeholder="Maximum glucose level (mmol/L)"
                         />
                     </div>
                 </div>
@@ -413,19 +560,105 @@ const SensorModal = ({
                         <input
                             id="correction-factor"
                             type="number"
-                            value={correctionFactor}
+                            step={0.1}
+                            value={parseFloat(correctionFactor).toFixed(1)}
+                            min={0.1}
+                            max={10.0}
+                            onChange={handleCorrectionFactorChange}
                             className="input-box"
-                            placeholder="Correction factor (U/mmol/L)"
                         />
                     </div>
                 </div>
-                <button className="sensor-save-btn">SAVE</button>
+                <button className="sensor-save-btn" onClick={handleSave}>
+                    SAVE
+                </button>
             </div>
         </div>
     )
 }
 
-const PumpModal = ({ isOpen, onClose, basalRate, maxIOB, insulinDuration }) => {
+const PumpModal = ({
+    isOpen,
+    onClose,
+    basalRate: initialBasalRate,
+    maxBolus: initialMaxBolus,
+    maxIOB: initialMaxIOB,
+    insulinDuration: initialInsulinDuration,
+    carbRatio: initialCarbRatio
+}) => {
+    const [basalRate, setBasalRate] = useState(initialBasalRate)
+    const [maxBolus, setMaxBolus] = useState(initialMaxBolus)
+    const [maxIOB, setMaxIOB] = useState(initialMaxIOB)
+    const [insulinDuration, setInsulinDuration] = useState(
+        initialInsulinDuration
+    )
+    const [carbRatio, setCarbRatio] = useState(initialCarbRatio)
+
+    useEffect(() => {
+        console.log("Received props:", {
+            initialBasalRate,
+            initialMaxBolus,
+            initialMaxIOB,
+            initialInsulinDuration,
+            initialCarbRatio,
+        })
+        setBasalRate(initialBasalRate)
+        setMaxBolus(initialMaxBolus)
+        setMaxIOB(initialMaxIOB)
+        setInsulinDuration(initialInsulinDuration)
+        setCarbRatio(initialCarbRatio)
+    }, [
+        initialBasalRate,
+        initialMaxIOB,
+        initialMaxBolus,
+        initialInsulinDuration,
+        initialCarbRatio,
+    ])
+
+    // Handle changes
+    const handleBasalRateChange = (e) => setBasalRate(e.target.value)
+    const handleMaxBolusChange = (e) => setMaxBolus(e.target.value)
+    const handleMaxIOBChange = (e) => setMaxIOB(e.target.value)
+    const handleInsulinDurationChange = (e) =>
+        setInsulinDuration(e.target.value)
+    const handleCarbRatioChange = (e) => setCarbRatio(e.target.value)
+
+    const handleSave = async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+
+            if (!token) {
+                alert("You must be logged in to save settings.")
+                return
+            }
+
+            const response = await axios.patch(
+                `${import.meta.env.VITE_API_URL}/api/pump-settings/`,
+                {
+                    basal_rate: basalRate,
+                    bolus_max: maxBolus,
+                    max_iob: maxIOB,
+                    insulin_duration: insulinDuration,
+                    carb_ratio: carbRatio,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+
+            console.log("✅ Pump settings updated:", response.data)
+            alert("Settings saved successfully!")
+        } catch (error) {
+            console.error(
+                "❌ Error saving pump settings:",
+                error.response || error
+            )
+            alert(
+                `Failed to save settings: ${error.response?.data?.detail || "Unknown error"}`
+            )
+        }
+    }
+
     if (!isOpen) return null
 
     return (
@@ -436,7 +669,6 @@ const PumpModal = ({ isOpen, onClose, basalRate, maxIOB, insulinDuration }) => {
                 </button>
                 <h2>Basal & Safety Settings</h2>
 
-                {/* Basal Rate */}
                 <div
                     style={{
                         display: "flex",
@@ -472,14 +704,17 @@ const PumpModal = ({ isOpen, onClose, basalRate, maxIOB, insulinDuration }) => {
                         <input
                             id="basal-rate"
                             type="number"
+                            step={0.05}
+                            min={0.75}
+                            max={25.0}
                             value={basalRate}
+                            onChange={handleBasalRateChange}
                             className="input-box"
                             placeholder="Basal rate (U/hr)"
                         />
                     </div>
                 </div>
 
-                {/* Max IOB */}
                 <div
                     style={{
                         display: "flex",
@@ -515,13 +750,106 @@ const PumpModal = ({ isOpen, onClose, basalRate, maxIOB, insulinDuration }) => {
                         <input
                             id="max-iob"
                             type="number"
+                            step={0.5}
+                            min={25}
+                            max={50}
                             value={maxIOB}
+                            onChange={handleMaxIOBChange}
                             className="input-box"
                             placeholder="Maximum IOB (U)"
                         />
                     </div>
                 </div>
-
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        justifyContent: "center",
+                    }}
+                >
+                    <img
+                        src="/maxiob.svg"
+                        alt="Maximum bolus"
+                        style={{ width: 24, height: 24, marginRight: "8px" }}
+                    />
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            minWidth: "280px",
+                        }}
+                    >
+                        <label
+                            htmlFor="max-bolus"
+                            style={{
+                                fontSize: 12,
+                                color: "#555",
+                                marginBottom: 4,
+                                textAlign: "center",
+                            }}
+                        >
+                            Maximum bolus (U)
+                        </label>
+                        <input
+                            id="max-bolus"
+                            type="number"
+                            step={0.5}
+                            min={15}
+                            max={30}
+                            value={maxBolus}
+                            onChange={handleMaxBolusChange}
+                            className="input-box"
+                            placeholder="Maximum bolus (U)"
+                        />
+                    </div>
+                </div>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        justifyContent: "center",
+                    }}
+                >
+                    <img
+                        src="/carbratio.svg"
+                        alt="Carb ratio"
+                        style={{ width: 24, height: 24, marginRight: "8px" }}
+                    />
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            minWidth: "280px",
+                        }}
+                    >
+                        <label
+                            htmlFor="carb-ratio"
+                            style={{
+                                fontSize: 12,
+                                color: "#555",
+                                marginBottom: 4,
+                                textAlign: "center",
+                            }}
+                        >
+                            Carb ratio (g/U)
+                        </label>
+                        <input
+                            id="carb-ratio"
+                            type="number"
+                            step={1}
+                            min={1}
+                            max={100}
+                            value={carbRatio}
+                            onChange={handleCarbRatioChange}
+                            className="input-box"
+                            placeholder="Carb ratio (g/U)"
+                        />
+                    </div>
+                </div>
                 <p>
                     Your basal rate should constitute{" "}
                     <strong>~40% of your total daily dose</strong> of insulin.
@@ -577,20 +905,20 @@ const PumpModal = ({ isOpen, onClose, basalRate, maxIOB, insulinDuration }) => {
                         <input
                             id="insulin-duration"
                             type="number"
+                            step={1}
+                            min={180}
+                            max={400}
                             value={insulinDuration}
+                            onChange={handleInsulinDurationChange}
                             className="input-box"
                             placeholder="Duration of active insulin (minutes)"
                         />
                     </div>
                 </div>
 
-                <p>
-                    Depending on the kind of insulin you use, its active
-                    duration can vary. Rapid-acting insulin typically lasts{" "}
-                    <strong>180-300 minutes</strong> in the body.
-                </p>
-
-                <button className="pump-save-btn">SAVE</button>
+                <button className="pump-save-btn" onClick={handleSave}>
+                    SAVE
+                </button>
             </div>
         </div>
     )
@@ -624,8 +952,10 @@ PumpModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     basalRate: PropTypes.number.isRequired,
+    maxBolus: PropTypes.number.isRequired,
     maxIOB: PropTypes.number.isRequired,
     insulinDuration: PropTypes.number.isRequired,
+    carbRatio: PropTypes.number.isRequired,
 }
 
 export { BolusModal, SensorModal, PumpModal }

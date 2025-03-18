@@ -21,7 +21,7 @@
 }
 
 .glucose-value {
-    font-size: 6.5rem;
+    font-size: 5rem;
     font-weight: bold;
     margin: 0;
     display: flex;
@@ -30,7 +30,7 @@
 }
 
 .glucose-trend {
-    font-size: 5.5rem;
+    font-size: 5rem;
     transform: translate(0, -8%);
 }
 

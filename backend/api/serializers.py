@@ -37,7 +37,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer(required=True)  # Handle extra user fields
+    profile = UserProfileSerializer(required=True)
 
     class Meta:
         model = User
@@ -90,3 +90,38 @@ class GlucoseSerializer(serializers.ModelSerializer):
         model = GlucoseReading
         fields = ["id", "timestamp", "reading", "trend", "patient"]
         extra_kwargs = {"patient": {"read_only": True}}
+
+class SensorSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ["glucose_min", "glucose_target", "glucose_max", "correction_factor"]
+        extra_kwargs = {field: {"required": False} for field in fields}
+
+    def update(self, instance, validated_data):
+        instance.glucose_min = validated_data.get("glucose_min", instance.glucose_min)
+        instance.glucose_target = validated_data.get(
+            "glucose_target", instance.glucose_target
+        )
+        instance.glucose_max = validated_data.get("glucose_max", instance.glucose_max)
+        instance.correction_factor = validated_data.get(
+            "correction_factor", instance.correction_factor
+        )
+        instance.save()
+        return instance
+    
+class PumpSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ["basal_rate", "bolus_max", "max_iob", "carb_ratio", "insulin_duration"]
+        extra_kwargs = {field: {"required": False} for field in fields}
+
+    def update(self, instance, validated_data):
+        instance.basal_rate = validated_data.get("basal_rate", instance.basal_rate)
+        instance.bolus_max = validated_data.get("bolus_max", instance.bolus_max)
+        instance.max_iob = validated_data.get("max_iob", instance.max_iob)
+        instance.carb_ratio = validated_data.get("carb_ratio", instance.carb_ratio)
+        instance.insulin_duration = validated_data.get(
+            "insulin_duration", instance.insulin_duration
+        )
+        instance.save()
+        return instance

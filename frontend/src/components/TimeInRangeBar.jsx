@@ -50,9 +50,8 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         color: "white",
                         fontSize: "25px",
                         fontWeight: "lighter",
-                        borderRadius: "5px",
-                        borderTopLeftRadius: "5px",
-                        borderTopRightRadius: "5px",
+                        borderBottomLeftRadius: "5px",
+                        borderBottomRightRadius: "5px",
                     }}
                 >
                     {lowPercentage > 0 ? `${lowPercentage.toFixed(0)}%` : ""}
@@ -71,7 +70,10 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         color: "white",
                         fontSize: "25px",
                         fontWeight: "bold",
-                        borderRadius: "5px",
+                        borderBottomLeftRadius: lowPercentage > 0 ? "0px" : "5px",
+                        borderBottomRightRadius: lowPercentage > 0 ? "0px" : "5px",
+                        borderTopLeftRadius: highPercentage > 0 ? "0px" : "5px",
+                        borderTopRightRadius: highPercentage > 0 ? "0px" : "5px",
                     }}
                 >
                     {inRangePercentage > 0
@@ -92,7 +94,6 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         color: "white",
                         fontSize: "12px",
                         fontWeight: "lighter",
-                        borderRadius: "5px",
                         borderTopLeftRadius: "5px",
                         borderTopRightRadius: "5px",
                     }}
