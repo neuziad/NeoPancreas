@@ -4,15 +4,16 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black overlay */
+    background: rgba(0, 0, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999; /* Ensure it stays on top */
+    z-index: 9999;
 }
 
 .alert-content {
     width: 350px;
+    height: 60vh;
     padding: 20px;
     border-radius: 12px;
     text-align: center;
@@ -22,13 +23,11 @@
 }
 
 .alert-content img {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 10px;
+    width: 12rem;
 }
 
 .alert-content h2 {
-    font-size: 20px;
+    font-size: 2.2rem;
     font-weight: bold;
     color: #333;
     margin-bottom: 15px;
@@ -36,6 +35,7 @@
 
 .alert-content button {
     background: white;
+    font-size: 1.2rem;
     border: 2px solid black;
     font-size: 16px;
     padding: 10px 20px;
@@ -43,6 +43,8 @@
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
+    margin-top: 1rem;
+    filter: drop-shadow(0px 10px 5px #b0b0b0);
 }
 
 .alert-content button:hover {
