@@ -46,11 +46,11 @@ const AlertModal = ({ type, onClose }) => {
     }, [type])
 
     return (
-        <div
-            className="alert-modal"
-            style={{ backgroundColor: alertMessages[type].bg }}
-        >
-            <div className="alert-content">
+        <div className="alert-modal">
+            <div
+                className="alert-content"
+                style={{ backgroundColor: alertMessages[type].bg }}
+            >
                 <img
                     src={alertMessages[type].icon}
                     alt={alertMessages[type].text}

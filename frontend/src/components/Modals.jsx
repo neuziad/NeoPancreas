@@ -4,7 +4,7 @@ import "../styles/Modals.css"
 import axios from "axios"
 import { ACCESS_TOKEN } from "../constants"
 
-const EXERCISE_MODE_MODIFIER = 0.75
+const EXERCISE_MODE_MODIFIER = 0.25
 
 const BolusModal = ({
     isOpen,

@@ -14,7 +14,7 @@ import logging
 # Constants
 getcontext().prec = 3
 logger = logging.getLogger(__name__)
-EXERCISE_MODE_MODIFIER = Decimal("0.75")
+EXERCISE_MODE_MODIFIER = Decimal("0.25")
 
 
 class UserProfile(models.Model):
@@ -209,29 +209,38 @@ class UserProfile(models.Model):
 
         return self.iob
 
-    # def titrate_bolus(self, carbs):
-    #     """Adjusts bolus insulin delivery based on glucose levels, IOB, and carb input."""
-    #     try:
-    #         carbs = Decimal(str(carbs)) if carbs else Decimal("0")
-    #     except InvalidOperation:
-    #         logger.error(f"Invalid carbs value: {carbs}")
-    #         carbs = Decimal("0")
+    def titrate_bolus(self, carbs):
+        """
+        Adjusts bolus insulin delivery based on glucose levels, IOB, and carb input.
+        NOTE: This particular implementation of the bolus titration algorithm is
+        mainly used for the simglucose unit tests. For the app itself, a JavaScript
+        implementation is used instead.
+        """
+        try:
+            carbs = Decimal(str(carbs)) if carbs else Decimal("0")
+        except InvalidOperation:
+            logger.error(f"Invalid carbs value: {carbs}")
+            carbs = Decimal("0")
 
-    #     qs = self.glucose_readings.all()
-    #     first_reading = qs.first()
-    #     current_glucose = Decimal(str(first_reading.reading)) if first_reading else Decimal("0")
+        qs = self.glucose_readings.all()
+        first_reading = qs.first()
+        current_glucose = (
+            Decimal(str(first_reading.reading)) if first_reading else Decimal("0")
+        )
 
-    #     if current_glucose < self.glucose_min:
-    #         return Decimal("0")
+        if current_glucose < self.glucose_min:
+            return Decimal("0")
 
-    #     bolus_per_step = carbs / self.carb_ratio
-    #     bolus_per_step += (current_glucose - self.glucose_target) / self.correction_factor
+        bolus_per_step = carbs / self.carb_ratio
+        bolus_per_step += (
+            current_glucose - self.glucose_target
+        ) / self.correction_factor
 
-    #     if self.em_enabled:
-    #         bolus_per_step *= EXERCISE_MODE_MODIFIER
+        if self.em_enabled:
+            bolus_per_step *= EXERCISE_MODE_MODIFIER
 
-    #     bolus_per_step = min(max(Decimal("0"), bolus_per_step), self.bolus_max)
-    #     return bolus_per_step.quantize(Decimal("0.05"), rounding=ROUND_HALF_UP)
+        bolus_per_step = min(max(Decimal("0"), bolus_per_step), self.bolus_max)
+        return bolus_per_step.quantize(Decimal("0.05"), rounding=ROUND_HALF_UP)
 
     def titrate_basal(self):
         """
@@ -269,11 +278,11 @@ class UserProfile(models.Model):
 
         # Adjust further based on glucose trend
         trend_multipliers = {
-            "↑↑": Decimal("1.25"),
-            "↑": Decimal("1"),
-            "↗": Decimal("0.75"),
-            "→": Decimal("0.5"),
-            "↘": Decimal("0.1"),
+            "↑↑": Decimal("1"),
+            "↑": Decimal("0.8"),
+            "↗": Decimal("0.55"),
+            "→": Decimal("0.35"),
+            "↘": Decimal("0.05"),
             "↓": Decimal("0"),
             "↓↓": Decimal("0"),
             "NODATA": Decimal("0"),

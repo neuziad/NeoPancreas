@@ -32,14 +32,21 @@ npm test
 
 ```bash
 cd simulations
-echo will work on this later i promise lol
+python run.py [--all]
+```
+
+If the --all argument isn't inputted, you will see a prompt on what range of tests you want to run:
+
+```bash
+Enter the starting test number (1-7): _
+Enter the ending test number (1-7): _
 ```
 
 ## .env Attributes
 
 ### Back-end
 
-```
+```env
 DJANGO_SETTINGS_MODULE="backend.settings"
 DJANGO_SECRET_KEY=django_password
 DEBUG=True
@@ -51,7 +58,7 @@ CELERY_LOG_LEVEL=DEBUG
 
 ### Front-end
 
-```
+```env
 VITE_API_URL=backend_url
 VITE_WEBSOCKET_URL=backend_url/different_port
 ```

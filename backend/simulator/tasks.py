@@ -107,7 +107,7 @@ def create_reading(*args):
         basal_dose = user.profile.titrate_basal()
         if user.profile.em_enabled:
             basal_dose *= Decimal("0.75")
-            
+
         new_reading.basal_injected = Decimal(str(basal_dose))
         new_reading.bolus_injected = Decimal(str(user.profile.pending_bolus))
 
