@@ -224,22 +224,25 @@ const Dashboard = () => {
     return (
         <div>
             {/* Header */}
-            <div className="dash-header">
-                <div>
+            <div className="fixed top-0 left-0 right-0 z-10 bg-[#eac6eb] flex items-center px-3 h-[3.5rem]">
+                {/* Left Icons */}
+                <div className="flex items-center space-x-2 header-icon">
                     <img
                         src="/sensorsetting.svg"
-                        className="header-icon"
+                        className="w-xs h-xs cursor-pointer"
                         onClick={() => setIsSensorOpen(true)}
                         alt="Sensor Settings"
                     />
                     <img
                         src="/pumpsetting.svg"
-                        className="header-icon"
+                        className="w-xs h-xs cursor-pointer"
                         onClick={() => setIsPumpOpen(true)}
                         alt="Pump Settings"
                     />
                 </div>
-                <h1 className="header-title">
+
+                {/* User's Name Centered */}
+                <h1 className="absolute inset-x-0 text-center text-[1.1rem] font-bold text-black">
                     {currentUser.first_name} {currentUser.last_name}&apos;s
                     Dashboard
                 </h1>
@@ -298,23 +301,9 @@ const Dashboard = () => {
                 setIsBolusOpen={() => setIsBolusOpen(false)}
             />
 
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1.5rem",
-                    justifyContent: "center",
-                    marginTop: "2rem",
-                }}
-            >
+            <div className="flex items-center justify-center gap-8 mt-8 pt-8">
                 {/* Left section: glucose reading & time in range */}
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "flow",
-                        alignItems: "center",
-                    }}
-                >
+                <div className="flex items-center">
                     <GlucoseReading
                         data={glucoseData}
                         startData={timeInRangeData[timeInRangeData.length - 1]}
@@ -329,34 +318,39 @@ const Dashboard = () => {
                 </div>
 
                 {/* Vertical separator */}
-                <div
-                    style={{
-                        width: "1px",
-                        height: "410px",
-                        background:
-                            "linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)",
-                    }}
-                />
+                <div className="w-px h-[350px] bg-gradient-to-b from-white via-gray-400 to-white" />
 
                 {/* Right section: IOB, exercise mode, bolus, basal */}
-                <BasalAndBolus
-                    basalrate={userProfile.basalRate}
-                    emEnabled={userProfile.emEnabled}
-                    iob={userProfile.iob}
-                    isRunning={isRunning}
-                    onOpenBolus={() => setIsBolusOpen(true)}
-                />
+                <div className="flex flex-col gap-4">
+                    <BasalAndBolus
+                        basalrate={userProfile.basalRate}
+                        emEnabled={userProfile.emEnabled}
+                        iob={userProfile.iob}
+                        isRunning={isRunning}
+                        onOpenBolus={() => setIsBolusOpen(true)}
+                    />
+                </div>
             </div>
 
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "100%",
-                    flexDirection: "row-reverse",
-                }}
-            >
+            <div className="flex justify-between items-center px-4">
+                {/* Start/stop button */}
+                <div className="flex items-center">
+                    {loading ? (
+                        <span className="text-sm">Processing...</span>
+                    ) : (
+                        <img
+                            src={isRunning ? "/stopsim.svg" : "/startsim.svg"}
+                            alt={
+                                isRunning
+                                    ? "Stop Simulation"
+                                    : "Start Simulation"
+                            }
+                            className="w-10 h-10 cursor-pointer"
+                            onClick={handleClick}
+                        />
+                    )}
+                </div>
+
                 {/* Time selector */}
                 <ToggleButtonGroup
                     value={selectedChartTimespan}
@@ -366,65 +360,18 @@ const Dashboard = () => {
                             setSelectedChartTimespan(newValue)
                     }}
                     aria-label="chart timespan"
-                    sx={{
-                        borderBottom: "2px solid #666",
-                        borderRadius: 0,
-                        width: "11%",
-                        justifyContent: "flex-start",
-                        height: "2.3rem",
-                        marginTop: "0.9rem",
-                        marginRight: "2.8rem",
-                    }}
+                    className="flex items-center justify-end"
                 >
                     {[4, 8, 12, 24].map((hrs) => (
                         <ToggleButton
                             key={hrs}
                             value={hrs}
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: "bold",
-                                color: "#666",
-                                "&.Mui-selected": {
-                                    color: "black",
-                                    borderBottom: "2px solid black",
-                                    backgroundColor: "transparent",
-                                },
-                                "&:hover": {
-                                    backgroundColor: "transparent",
-                                },
-                            }}
+                            className="text-sm font-bold text-gray-600 hover:bg-transparent hover:text-gray-900"
                         >
                             {hrs}hr
                         </ToggleButton>
                     ))}
                 </ToggleButtonGroup>
-
-                {/* Start/stop button */}
-                <div
-                    className="btn-group"
-                    style={{
-                        flexGrow: 0.035,
-                        display: "flex",
-                        justifyContent: "flex-end",
-                    }}
-                >
-                    {loading ? (
-                        <span>Processing...</span>
-                    ) : (
-                        <img
-                            src={isRunning ? "/stopsim.svg" : "/startsim.svg"}
-                            alt={
-                                isRunning
-                                    ? "Stop Simulation"
-                                    : "Start Simulation"
-                            }
-                            width="50"
-                            height="50"
-                            onClick={handleClick}
-                            style={{ cursor: "pointer" }}
-                        />
-                    )}
-                </div>
             </div>
 
             <GlucoseChart

@@ -17,9 +17,9 @@
 #    based on current glucose levels and trends. This will be the basal insulin algorithm
 #    that appears in NeoPancreas.
 # 4. Dynamic basal + exercise mode - Diabetic patients given a constantly changing basal
-#    insulin dosage, as well as "exercise mode" enabled, which generally lowers the amount
-#    of overall insulin administered to the patient to compensate for the increased metabolic
-#    demands of exercise. With this simulation, you should notice generally higher blood glucose
+#    insulin dosage, as well as "exercise mode" enabled, which lowers the amount of overall
+#    insulin administered to the patient to compensate for the increased metabolic demands
+#    of exercise. With this simulation, you should notice generally higher blood glucose
 #    levels compared to test 3.
 # 5. Dynamic basal + bolus for meals - Diabetic patients given a constantly changing basal
 #    insulin dosage, as well as 3 boluses throughout the day for breakfast, lunch and dinner.

@@ -41,7 +41,6 @@ class UserProfile(models.Model):
         null=True,
         blank=True,  # Simulation profile for simglucose
     )
-    carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
     pending_bolus = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
     last_update_time = models.DateTimeField(default=now)
 

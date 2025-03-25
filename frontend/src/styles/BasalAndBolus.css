@@ -12,11 +12,11 @@
 
 .iob-box {
     position: absolute;
-    top: 7rem;
-    padding: 5px 10px;
+    top: 8.75rem;
+    padding: 1px 10px;
     border: 1px solid black;
     display: inline-block;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     border-radius: 5px;
     background: white;
     font-weight: bold;
@@ -25,8 +25,8 @@
 
 .exercise-mode {
     position: relative;
-    top: 0.5rem;
-    left: 16.5rem;
+    top: 0.65rem;
+    left: 13.75rem;
     border: 1px solid black;
     padding: 5px 10px;
     font-weight: bold;
@@ -56,7 +56,7 @@
 .bolus-section {
     background-color: #d3e4f8;
     border: 2px solid black;
-    padding: 20px;
+    padding: 10px;
     text-align: center;
     width: 200px;
     height: 160px;
@@ -73,20 +73,20 @@
 }
 
 .bolus-icon {
-    font-size: 50px;
-    margin: 10px 0;
+    font-size: 3rem;
+    margin: 0;
 }
 
 .bolus-section p {
     font-style: italic;
-    font-size: 14px;
+    font-size: 0.85rem;
     color: #555;
 }
 
 .basal-section {
     background-color: #f8c4c4;
     border: 2px solid black;
-    padding: 20px;
+    padding: 10px;
     text-align: center;
     width: 200px;
     height: 160px;
@@ -99,9 +99,9 @@
     color: #404040;
     font-size: 2rem;
     font-weight: bold;
-    margin: initial;
+    margin: 0;
 }
 
 .basal-rate {
-    font-size: 2.5rem;
+    font-size: 2rem;
 }

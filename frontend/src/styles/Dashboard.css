@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .body {
     font-family: "Roboto", sans-serif;
     font-optical-sizing: auto;
@@ -50,4 +52,11 @@ h1 {
     font-weight: bold;
     color: black;
     transform: translateY(-250%);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    scrollbar-width: none;
 }

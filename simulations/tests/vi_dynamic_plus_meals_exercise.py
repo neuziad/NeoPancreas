@@ -29,18 +29,20 @@ BASAL_RATES = {
 # Meal schedule (hours since simulation start)
 MEAL_TIMES = {
     "breakfast": 8,
+    "exercise1": 10,
     "lunch": 12,
     "snack": 15,
-    "exercise": 16,
+    "exercise2": 16,
     "dinner": 18,
 }
 
 # Meal carbs (g)
 MEAL_CARBS = {
     "breakfast": 20,
-    "lunch": 55,
+    "exercise1": -20,
+    "lunch": 45,
     "snack": 10,
-    "exercise": -15,
+    "exercise2": -40,
     "dinner": 30,
 }
 
