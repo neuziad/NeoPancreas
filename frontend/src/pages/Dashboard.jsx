@@ -34,6 +34,7 @@ const Dashboard = () => {
     const [isSensorOpen, setIsSensorOpen] = useState(false)
     const [isPumpOpen, setIsPumpOpen] = useState(false)
     const [isBolusOpen, setIsBolusOpen] = useState(false)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
     let carbs = 0
 
     // Fetch status of simulation
@@ -226,26 +227,77 @@ const Dashboard = () => {
             {/* Header */}
             <div className="fixed top-0 left-0 right-0 z-10 bg-[#eac6eb] flex items-center px-3 h-[3.5rem]">
                 {/* Left Icons */}
-                <div className="flex items-center space-x-2 header-icon">
+                <div className="hidden sm:flex items-center space-x-2 header-icon">
                     <img
                         src="/sensorsetting.svg"
-                        className="w-xs h-xs cursor-pointer"
-                        onClick={() => setIsSensorOpen(true)}
+                        className="w-[3rem] h-[3rem] cursor-pointer"
+                        onClick={() => {
+                            setIsSensorOpen(true)
+                            setIsMenuOpen(false)
+                        }}
                         alt="Sensor Settings"
                     />
                     <img
                         src="/pumpsetting.svg"
-                        className="w-xs h-xs cursor-pointer"
-                        onClick={() => setIsPumpOpen(true)}
+                        className="w-[3rem] h-[3rem] cursor-pointer"
+                        onClick={() => {
+                            setIsPumpOpen(true)
+                            setIsMenuOpen(false)
+                        }}
                         alt="Pump Settings"
                     />
                 </div>
 
-                {/* User's Name Centered */}
-                <h1 className="absolute inset-x-0 text-center text-[1.1rem] font-bold text-black">
+                {/* Mobile menu collapsable */}
+                <div className="sm:hidden flex items-center">
+                    <img
+                        src="/menu.svg"
+                        className="w-6 h-6 cursor-pointer z-50"
+                        onClick={() => setIsMenuOpen((prev) => {
+                            return !prev
+                        })}
+                        alt="Menu"
+                    />
+                </div>
+
+                {/* Patient's name */}
+                <h1 className="absolute inset-x-0 text-center text-black font-bold text-[1rem] sm:text-[1.2rem]">
                     {currentUser.first_name} {currentUser.last_name}&apos;s
                     Dashboard
                 </h1>
+
+                {isMenuOpen && (
+                    <div className="absolute top-[3.5rem] left-0 right-0 bg-[#eac6eb] shadow-lg flex flex-col items-center py-2">
+                        <button
+                            onClick={() => {
+                                setIsSensorOpen(true)
+                                setIsMenuOpen(false)
+                            }}
+                            className="py-2 px-4 w-full text-left"
+                        >
+                            <img
+                                src="/sensorsetting.svg"
+                                className="w-6 h-6 inline-block mr-2"
+                                alt="Sensor Settings"
+                            />
+                            Sensor Settings
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsPumpOpen(true)
+                                setIsMenuOpen(false)
+                            }}
+                            className="py-2 px-4 w-full text-left"
+                        >
+                            <img
+                                src="/pumpsetting.svg"
+                                className="w-6 h-6 inline-block mr-2"
+                                alt="Pump Settings"
+                            />
+                            Pump Settings
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Modals */}
@@ -301,38 +353,42 @@ const Dashboard = () => {
                 setIsBolusOpen={() => setIsBolusOpen(false)}
             />
 
-            <div className="flex items-center justify-center gap-8 mt-8 pt-8">
-                {/* Left section: glucose reading & time in range */}
-                <div className="flex items-center">
-                    <GlucoseReading
-                        data={glucoseData}
-                        startData={timeInRangeData[timeInRangeData.length - 1]}
-                        glucoseMin={userProfile.glucoseMin}
-                        glucoseMax={userProfile.glucoseMax}
-                    />
-                    <TimeInRangeBar
-                        data={timeInRangeData}
-                        glucoseMin={userProfile.glucoseMin}
-                        glucoseMax={userProfile.glucoseMax}
-                    />
-                </div>
+            <div className="w-full overflow-x-auto px-8 lg:flex justify-center">
+                <div className="flex flex-nowrap items-center justify-start gap-8 md:mt-8 mt-12 pt-8 pd-4">
+                    {/* Left section: glucose reading & time in range */}
+                    <div className="flex items-center min-w-max">
+                        <GlucoseReading
+                            data={glucoseData}
+                            startData={
+                                timeInRangeData[timeInRangeData.length - 1]
+                            }
+                            glucoseMin={userProfile.glucoseMin}
+                            glucoseMax={userProfile.glucoseMax}
+                        />
+                        <TimeInRangeBar
+                            data={timeInRangeData}
+                            glucoseMin={userProfile.glucoseMin}
+                            glucoseMax={userProfile.glucoseMax}
+                        />
+                    </div>
 
-                {/* Vertical separator */}
-                <div className="w-px h-[350px] bg-gradient-to-b from-white via-gray-400 to-white" />
+                    {/* Vertical separator */}
+                    <div className="hidden md:block w-px h-[350px] bg-gradient-to-b from-white via-gray-400 to-white" />
 
-                {/* Right section: IOB, exercise mode, bolus, basal */}
-                <div className="flex flex-col gap-4">
-                    <BasalAndBolus
-                        basalrate={userProfile.basalRate}
-                        emEnabled={userProfile.emEnabled}
-                        iob={userProfile.iob}
-                        isRunning={isRunning}
-                        onOpenBolus={() => setIsBolusOpen(true)}
-                    />
+                    {/* Right section: IOB, exercise mode, bolus, basal */}
+                    <div className="flex flex-col gap-4 min-w-max pr-12 pd-4">
+                        <BasalAndBolus
+                            basalrate={userProfile.basalRate}
+                            emEnabled={userProfile.emEnabled}
+                            iob={userProfile.iob}
+                            isRunning={isRunning}
+                            onOpenBolus={() => setIsBolusOpen(true)}
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="flex justify-between items-center px-4">
+            <div className="flex justify-between items-center px-4 pt-2 sm:pt-4">
                 {/* Start/stop button */}
                 <div className="flex items-center">
                     {loading ? (

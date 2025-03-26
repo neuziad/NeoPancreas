@@ -144,10 +144,7 @@ const BolusModal = ({
                     readOnly
                     className="border rounded-md px-3 py-1 text-center w-4/5 bg-gray-300"
                 />
-                <button
-                    className="inject-btn"
-                    onClick={handleBolusInjection}
-                >
+                <button className="inject-btn" onClick={handleBolusInjection}>
                     INJECT
                 </button>
             </div>

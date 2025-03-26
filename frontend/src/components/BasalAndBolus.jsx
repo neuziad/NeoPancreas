@@ -54,10 +54,7 @@ const BasalAndBolus = ({
                 {/* Bolus section */}
                 <div className="bolus-section" onClick={onOpenBolus}>
                     <h2>Bolus</h2>
-                    <div className="bolus-icon">
-                        {/* Placeholder for an icon (replace with actual img if needed) */}
-                        💉
-                    </div>
+                    <div className="bolus-icon">💉</div>
                     <p>Click here to administer bolus</p>
                 </div>
 

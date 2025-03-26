@@ -25,7 +25,7 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
             <div
                 style={{
                     width: "80px",
-                    height: "230px",
+                    height: "210px",
                     borderRadius: "8px",
                     border: "3px solid #000000",
                     display: "flex",
