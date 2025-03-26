@@ -12,42 +12,15 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
     const startTime = Math.max(0, nowInMinutes - timeScale * 60)
     return (
-        <div data-testid="scatter-chart" className="body">
+        <div data-testid="scatter-chart" className="w-screen relative">
             {/* Chart */}
             {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={440}>
                     <ScatterChart
                         data={chartData}
-                        style={{ marginLeft: "-0.5rem" }}
+                        margin={{ top: 10, bottom: 10 }}
                     >
-                        <XAxis
-                            dataKey="timestamp"
-                            type="number"
-                            domain={[
-                                startTime,
-                                timeScale === 24
-                                    ? nowInMinutes
-                                    : nowInMinutes + 5,
-                            ]}
-                            tickFormatter={(minutes) => {
-                                if (isNaN(minutes)) return ""
-                                const hh = Math.floor(minutes / 60)
-                                    .toString()
-                                    .padStart(2, "0")
-                                const mm = (minutes % 60)
-                                    .toString()
-                                    .padStart(2, "0")
-                                return `${hh}:${mm}`
-                            }}
-                            tick={{ fontSize: 14 }}
-                        />
-                        <YAxis
-                            domain={[2, 22]}
-                            tickLine={true}
-                            axisLine={true}
-                            tick={{ fontSize: 14 }}
-                        />
-                        {/* Background colouring */}
+                        {/* Background coloring */}
                         <ReferenceArea
                             y1={2}
                             y2={glucoseMin}
@@ -67,11 +40,49 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                             fillOpacity={0.75}
                         />
 
+                        <XAxis
+                            dataKey="timestamp"
+                            type="number"
+                            domain={[
+                                startTime,
+                                timeScale === 24
+                                    ? nowInMinutes
+                                    : nowInMinutes + 5,
+                            ]}
+                            tickFormatter={(minutes) => {
+                                if (isNaN(minutes)) return ""
+                                const hh = Math.floor(minutes / 60)
+                                    .toString()
+                                    .padStart(2, "0")
+                                const mm = (minutes % 60)
+                                    .toString()
+                                    .padStart(2, "0")
+                                return `${hh}:${mm}`
+                            }}
+                            tick={{
+                                fontSize: 18,
+                                fill: "#222",
+                                fontWeight: "bold",
+                            }}
+                        />
+                        <YAxis
+                            domain={[2, 22]}
+                            mirror={true} // Ensures it mirrors
+                            tick={{
+                                fontSize: 16,
+                                fill: "#222",
+                                fontWeight: "bold",
+                                visibility: "visible",
+                                zIndex: 1000,
+                            }}
+                            tickLine={{ stroke: "#222", zIndex: 1000 }}
+                            axisLine={{ stroke: "#222", zIndex: 1000 }}
+                        />
                         <Scatter dataKey="glucose" fill="#000000" />
                     </ScatterChart>
                 </ResponsiveContainer>
             ) : (
-                <div style={{ marginLeft: "3.5%", marginTop: "2%" }}>
+                <div className="text-center mt-4">
                     <h1>Loading glucose data...</h1>
                     <p>
                         If this takes too long to load, you may not have any

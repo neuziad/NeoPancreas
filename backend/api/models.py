@@ -14,7 +14,7 @@ import logging
 # Constants
 getcontext().prec = 3
 logger = logging.getLogger(__name__)
-EXERCISE_MODE_MODIFIER = Decimal("0.75")
+EXERCISE_MODE_MODIFIER = Decimal("0.25")
 
 
 class UserProfile(models.Model):
@@ -41,7 +41,6 @@ class UserProfile(models.Model):
         null=True,
         blank=True,  # Simulation profile for simglucose
     )
-    carb_ratio = models.DecimalField(decimal_places=1, max_digits=3, default=10.0)
     pending_bolus = models.DecimalField(decimal_places=2, max_digits=4, default=0.00)
     last_update_time = models.DateTimeField(default=now)
 
@@ -160,14 +159,20 @@ class UserProfile(models.Model):
         elapsed_time = (current_time - self.last_update_time).total_seconds() / 60
 
         # Fetch past readings BEFORE updating last_update_time
-        readings = list(self.glucose_readings.filter(timestamp__gt=self.last_update_time)[:200])
+        readings = list(
+            self.glucose_readings.filter(timestamp__gt=self.last_update_time)[:200]
+        )
         self.last_update_time = current_time
 
         # Decay existing IOB
         if self.iob > 0:
             try:
-                decay_factor = Decimal(str(math.exp(-elapsed_time / self.insulin_duration)))
-                self.iob = (self.iob * decay_factor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                decay_factor = Decimal(
+                    str(math.exp(-elapsed_time / self.insulin_duration))
+                )
+                self.iob = (self.iob * decay_factor).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
             except (ValueError, InvalidOperation) as e:
                 logger.error(f"IOB decay calculation failed: {e}")
 
@@ -177,8 +182,16 @@ class UserProfile(models.Model):
 
         for reading in readings:
             try:
-                new_bolus += Decimal(reading.bolus_injected) if reading.bolus_injected is not None else Decimal("0")
-                new_basal += Decimal(reading.basal_injected) if reading.basal_injected is not None else Decimal("0")
+                new_bolus += (
+                    Decimal(reading.bolus_injected)
+                    if reading.bolus_injected is not None
+                    else Decimal("0")
+                )
+                new_basal += (
+                    Decimal(reading.basal_injected)
+                    if reading.basal_injected is not None
+                    else Decimal("0")
+                )
             except InvalidOperation as e:
                 logger.error(f"Invalid Decimal value in past readings: {e}")
 
@@ -186,36 +199,47 @@ class UserProfile(models.Model):
 
         if new_basal > 0:
             try:
-                basal_integral = new_basal * Decimal(str(1 - math.exp(-elapsed_time / self.insulin_duration)))
+                basal_integral = new_basal * Decimal(
+                    str(1 - math.exp(-elapsed_time / self.insulin_duration))
+                )
                 self.iob += basal_integral
             except (ValueError, InvalidOperation) as e:
                 logger.error(f"Basal integral calculation failed: {e}")
 
         return self.iob
 
-    # def titrate_bolus(self, carbs):
-    #     """Adjusts bolus insulin delivery based on glucose levels, IOB, and carb input."""
-    #     try:
-    #         carbs = Decimal(str(carbs)) if carbs else Decimal("0")
-    #     except InvalidOperation:
-    #         logger.error(f"Invalid carbs value: {carbs}")
-    #         carbs = Decimal("0")
+    def titrate_bolus(self, carbs):
+        """
+        Adjusts bolus insulin delivery based on glucose levels, IOB, and carb input.
+        NOTE: This particular implementation of the bolus titration algorithm is
+        mainly used for the simglucose unit tests. For the app itself, a JavaScript
+        implementation is used instead.
+        """
+        try:
+            carbs = Decimal(str(carbs)) if carbs else Decimal("0")
+        except InvalidOperation:
+            logger.error(f"Invalid carbs value: {carbs}")
+            carbs = Decimal("0")
 
-    #     qs = self.glucose_readings.all()
-    #     first_reading = qs.first()
-    #     current_glucose = Decimal(str(first_reading.reading)) if first_reading else Decimal("0")
+        qs = self.glucose_readings.all()
+        first_reading = qs.first()
+        current_glucose = (
+            Decimal(str(first_reading.reading)) if first_reading else Decimal("0")
+        )
 
-    #     if current_glucose < self.glucose_min:
-    #         return Decimal("0")
+        if current_glucose < self.glucose_min:
+            return Decimal("0")
 
-    #     bolus_per_step = carbs / self.carb_ratio
-    #     bolus_per_step += (current_glucose - self.glucose_target) / self.correction_factor
+        bolus_per_step = carbs / self.carb_ratio
+        bolus_per_step += (
+            current_glucose - self.glucose_target
+        ) / self.correction_factor
 
-    #     if self.em_enabled:
-    #         bolus_per_step *= EXERCISE_MODE_MODIFIER
+        if self.em_enabled:
+            bolus_per_step *= EXERCISE_MODE_MODIFIER
 
-    #     bolus_per_step = min(max(Decimal("0"), bolus_per_step), self.bolus_max)
-    #     return bolus_per_step.quantize(Decimal("0.05"), rounding=ROUND_HALF_UP)
+        bolus_per_step = min(max(Decimal("0"), bolus_per_step), self.bolus_max)
+        return bolus_per_step.quantize(Decimal("0.05"), rounding=ROUND_HALF_UP)
 
     def titrate_basal(self):
         """
@@ -253,11 +277,11 @@ class UserProfile(models.Model):
 
         # Adjust further based on glucose trend
         trend_multipliers = {
-            "↑↑": Decimal("1.25"),
-            "↑": Decimal("1"),
-            "↗": Decimal("0.75"),
-            "→": Decimal("0.5"),
-            "↘": Decimal("0.1"),
+            "↑↑": Decimal("1"),
+            "↑": Decimal("0.8"),
+            "↗": Decimal("0.55"),
+            "→": Decimal("0.35"),
+            "↘": Decimal("0.05"),
             "↓": Decimal("0"),
             "↓↓": Decimal("0"),
             "NODATA": Decimal("0"),

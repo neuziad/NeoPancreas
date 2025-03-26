@@ -22,6 +22,7 @@ getcontext().prec = 3
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+
 # Create a reading and apply the necessary insulin
 @shared_task
 def create_reading(*args):
@@ -92,10 +93,22 @@ def create_reading(*args):
             new_reading = GlucoseReading(patient=user.profile)
 
         # Update reading data
-        new_reading.reading = float(new_reading.adjust_for_noise(reading_value)) if new_reading.adjust_for_noise(reading_value) is not None else 0
+        new_reading.reading = (
+            float(new_reading.adjust_for_noise(reading_value))
+            if new_reading.adjust_for_noise(reading_value) is not None
+            else 0
+        )
+
+        # Calculate trend data
         trend_rate = new_reading.calculate_trend()
         new_reading.trend = new_reading.detect_trend_alert(trend_rate)
-        new_reading.basal_injected = Decimal(str(user.profile.titrate_basal()))
+
+        # Generate insulin doses
+        basal_dose = user.profile.titrate_basal()
+        if user.profile.em_enabled:
+            basal_dose *= Decimal("0.75")
+
+        new_reading.basal_injected = Decimal(str(basal_dose))
         new_reading.bolus_injected = Decimal(str(user.profile.pending_bolus))
 
         # Reset pending bolus on user profile if bolus was injected

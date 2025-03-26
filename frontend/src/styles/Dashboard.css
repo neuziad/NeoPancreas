@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .body {
     font-family: "Roboto", sans-serif;
     font-optical-sizing: auto;
@@ -5,12 +7,6 @@
     font-style: normal;
     color: #404040;
     background-color: #fcfffe;
-}
-
-h1 {
-    font-size: 24px;
-    font-weight: 800;
-    color: #404040;
 }
 
 .current-glucose {
@@ -52,12 +48,9 @@ h1 {
     transform: translateY(-250%);
 }
 
-.dash-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2.6rem;
-    z-index: 1;
-    background-color: #eac7eb;
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    scrollbar-width: none;
 }

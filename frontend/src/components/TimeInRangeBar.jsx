@@ -25,7 +25,7 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
             <div
                 style={{
                     width: "80px",
-                    height: "230px",
+                    height: "210px",
                     borderRadius: "8px",
                     border: "3px solid #000000",
                     display: "flex",
@@ -70,10 +70,13 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                         color: "white",
                         fontSize: "25px",
                         fontWeight: "bold",
-                        borderBottomLeftRadius: lowPercentage > 0 ? "0px" : "5px",
-                        borderBottomRightRadius: lowPercentage > 0 ? "0px" : "5px",
+                        borderBottomLeftRadius:
+                            lowPercentage > 0 ? "0px" : "5px",
+                        borderBottomRightRadius:
+                            lowPercentage > 0 ? "0px" : "5px",
                         borderTopLeftRadius: highPercentage > 0 ? "0px" : "5px",
-                        borderTopRightRadius: highPercentage > 0 ? "0px" : "5px",
+                        borderTopRightRadius:
+                            highPercentage > 0 ? "0px" : "5px",
                     }}
                 >
                     {inRangePercentage > 0

@@ -54,10 +54,7 @@ const BasalAndBolus = ({
                 {/* Bolus section */}
                 <div className="bolus-section" onClick={onOpenBolus}>
                     <h2>Bolus</h2>
-                    <div className="bolus-icon">
-                        {/* Placeholder for an icon (replace with actual img if needed) */}
-                        💉
-                    </div>
+                    <div className="bolus-icon">💉</div>
                     <p>Click here to administer bolus</p>
                 </div>
 
@@ -65,7 +62,7 @@ const BasalAndBolus = ({
                 <div className="basal-section">
                     <h2>Basal</h2>
                     <div className="basal-rate">
-                        <span style={{ fontSize: "4.25rem", fontWeight: 600 }}>
+                        <span style={{ fontSize: "3.5rem", fontWeight: 600 }}>
                             {basalrate}
                         </span>
                         U/hr

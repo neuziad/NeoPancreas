@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0001_initial'),
+        ("api", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='userprofile',
-            name='cob',
+            model_name="userprofile",
+            name="cob",
         ),
         migrations.AddField(
-            model_name='userprofile',
-            name='pending_bolus',
+            model_name="userprofile",
+            name="pending_bolus",
             field=models.DecimalField(decimal_places=2, default=0.0, max_digits=4),
         ),
     ]

@@ -10,3 +10,9 @@ globalThis.ResizeObserver = jest.fn().mockImplementation(() => ({
     unobserve: jest.fn(),
     disconnect: jest.fn(),
 }))
+
+globalThis.Audio = jest.fn().mockImplementation(() => ({
+    play: jest.fn().mockResolvedValue(),
+    pause: jest.fn(),
+    currentTime: 0,
+}))

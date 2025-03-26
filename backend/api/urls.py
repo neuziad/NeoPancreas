@@ -9,7 +9,7 @@ from api.views import (
     simulation_status,
     toggle_exercise_mode,
     UserView,
-    inject_bolus
+    inject_bolus,
 )
 
 urlpatterns = [

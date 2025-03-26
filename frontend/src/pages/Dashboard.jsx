@@ -11,7 +11,13 @@ import {
     getSimulationStatus,
 } from "../components/Simulations"
 import { ToggleButton, ToggleButtonGroup } from "@mui/material"
-import { SensorModal, PumpModal, BolusModal } from "../components/Modals"
+import {
+    SensorModal,
+    PumpModal,
+    BolusModal,
+    FooterModals,
+} from "../components/Modals"
+import AlertMonitor from "../components/Alerts"
 
 const WEBSOCKET_URL =
     import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8001/ws/glucose/"
@@ -28,6 +34,7 @@ const Dashboard = () => {
     const [isSensorOpen, setIsSensorOpen] = useState(false)
     const [isPumpOpen, setIsPumpOpen] = useState(false)
     const [isBolusOpen, setIsBolusOpen] = useState(false)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
     let carbs = 0
 
     // Fetch status of simulation
@@ -218,28 +225,87 @@ const Dashboard = () => {
     return (
         <div>
             {/* Header */}
-            <div className="dash-header">
-                <div>
+            <div className="fixed top-0 left-0 right-0 z-10 bg-[#eac6eb] flex items-center px-3 h-[3.5rem]">
+                {/* Left Icons */}
+                <div className="hidden sm:flex items-center space-x-2 header-icon">
                     <img
                         src="/sensorsetting.svg"
-                        className="header-icon"
-                        onClick={() => setIsSensorOpen(true)}
+                        className="w-[3rem] h-[3rem] cursor-pointer"
+                        onClick={() => {
+                            setIsSensorOpen(true)
+                            setIsMenuOpen(false)
+                        }}
                         alt="Sensor Settings"
                     />
                     <img
                         src="/pumpsetting.svg"
-                        className="header-icon"
-                        onClick={() => setIsPumpOpen(true)}
+                        className="w-[3rem] h-[3rem] cursor-pointer"
+                        onClick={() => {
+                            setIsPumpOpen(true)
+                            setIsMenuOpen(false)
+                        }}
                         alt="Pump Settings"
                     />
                 </div>
-                <h1 className="header-title">
+
+                {/* Mobile menu collapsable */}
+                <div className="sm:hidden flex items-center">
+                    <img
+                        src="/menu.svg"
+                        className="w-6 h-6 cursor-pointer z-50"
+                        onClick={() => setIsMenuOpen((prev) => {
+                            return !prev
+                        })}
+                        alt="Menu"
+                    />
+                </div>
+
+                {/* Patient's name */}
+                <h1 className="absolute inset-x-0 text-center text-black font-bold text-[1rem] sm:text-[1.2rem]">
                     {currentUser.first_name} {currentUser.last_name}&apos;s
                     Dashboard
                 </h1>
+
+                {isMenuOpen && (
+                    <div className="absolute top-[3.5rem] left-0 right-0 bg-[#eac6eb] shadow-lg flex flex-col items-center py-2">
+                        <button
+                            onClick={() => {
+                                setIsSensorOpen(true)
+                                setIsMenuOpen(false)
+                            }}
+                            className="py-2 px-4 w-full text-left"
+                        >
+                            <img
+                                src="/sensorsetting.svg"
+                                className="w-6 h-6 inline-block mr-2"
+                                alt="Sensor Settings"
+                            />
+                            Sensor Settings
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsPumpOpen(true)
+                                setIsMenuOpen(false)
+                            }}
+                            className="py-2 px-4 w-full text-left"
+                        >
+                            <img
+                                src="/pumpsetting.svg"
+                                className="w-6 h-6 inline-block mr-2"
+                                alt="Pump Settings"
+                            />
+                            Pump Settings
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Modals */}
+            <AlertMonitor
+                glucoseData={glucoseData}
+                glucoseMin={userProfile.glucoseMin}
+                glucoseMax={userProfile.glucoseMax}
+            />
             <SensorModal
                 isOpen={isSensorOpen}
                 onClose={() => setIsSensorOpen(false)}
@@ -248,6 +314,7 @@ const Dashboard = () => {
                 glucoseTarget={userProfile.glucoseTarget}
                 glucoseMax={userProfile.glucoseMax}
                 correctionFactor={userProfile.correctionFactor}
+                fetchUserProfile={fetchUserProfile}
                 setIsSensorOpen={() => setIsSensorOpen(false)}
             />
             <PumpModal
@@ -258,6 +325,7 @@ const Dashboard = () => {
                 maxBolus={userProfile.bolusMax}
                 insulinDuration={userProfile.insulinDuration}
                 carbRatio={userProfile.carbRatio}
+                fetchUserProfile={fetchUserProfile}
                 setIsPumpOpen={() => setIsPumpOpen(false)}
             />
             <BolusModal
@@ -266,11 +334,15 @@ const Dashboard = () => {
                 emEnabled={userProfile.emEnabled}
                 carbs={carbs}
                 currentGlucose={
-                    glucoseData.length > 0 && typeof glucoseData[glucoseData.length - 1].glucose === 'number'
+                    glucoseData.length > 0 &&
+                    typeof glucoseData[glucoseData.length - 1].glucose ===
+                        "number"
                         ? glucoseData[glucoseData.length - 1].glucose
-                        : (timeInRangeData.length > 0 && typeof timeInRangeData[timeInRangeData.length - 1].glucose === 'number'
-                            ? timeInRangeData[timeInRangeData.length - 1].glucose
-                            : undefined)
+                        : timeInRangeData.length > 0 &&
+                            typeof timeInRangeData[timeInRangeData.length - 1]
+                                .glucose === "number"
+                          ? timeInRangeData[timeInRangeData.length - 1].glucose
+                          : undefined // On start-up, there will be nothing in glucoseData, so we get the most recent historic data in such a case
                 }
                 carbRatio={userProfile.carbRatio}
                 correctionFactor={userProfile.correctionFactor}
@@ -281,65 +353,60 @@ const Dashboard = () => {
                 setIsBolusOpen={() => setIsBolusOpen(false)}
             />
 
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1.5rem",
-                    justifyContent: "center",
-                    marginTop: "2rem",
-                }}
-            >
-                {/* Left section: glucose reading & time in range */}
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "flow",
-                        alignItems: "center",
-                    }}
-                >
-                    <GlucoseReading
-                        data={glucoseData}
-                        startData={timeInRangeData[timeInRangeData.length - 1]}
-                        glucoseMin={userProfile.glucoseMin}
-                        glucoseMax={userProfile.glucoseMax}
-                    />
-                    <TimeInRangeBar
-                        data={timeInRangeData}
-                        glucoseMin={userProfile.glucoseMin}
-                        glucoseMax={userProfile.glucoseMax}
-                    />
+            <div className="w-full overflow-x-auto px-8 lg:flex justify-center">
+                <div className="flex flex-nowrap items-center justify-start gap-8 md:mt-8 mt-12 pt-8 pd-4">
+                    {/* Left section: glucose reading & time in range */}
+                    <div className="flex items-center min-w-max">
+                        <GlucoseReading
+                            data={glucoseData}
+                            startData={
+                                timeInRangeData[timeInRangeData.length - 1]
+                            }
+                            glucoseMin={userProfile.glucoseMin}
+                            glucoseMax={userProfile.glucoseMax}
+                        />
+                        <TimeInRangeBar
+                            data={timeInRangeData}
+                            glucoseMin={userProfile.glucoseMin}
+                            glucoseMax={userProfile.glucoseMax}
+                        />
+                    </div>
+
+                    {/* Vertical separator */}
+                    <div className="hidden md:block w-px h-[350px] bg-gradient-to-b from-white via-gray-400 to-white" />
+
+                    {/* Right section: IOB, exercise mode, bolus, basal */}
+                    <div className="flex flex-col gap-4 min-w-max pr-12 pd-4">
+                        <BasalAndBolus
+                            basalrate={userProfile.basalRate}
+                            emEnabled={userProfile.emEnabled}
+                            iob={userProfile.iob}
+                            isRunning={isRunning}
+                            onOpenBolus={() => setIsBolusOpen(true)}
+                        />
+                    </div>
                 </div>
-
-                {/* Vertical separator */}
-                <div
-                    style={{
-                        width: "1px",
-                        height: "410px",
-                        background:
-                            "linear-gradient(to bottom, #FCFFFE 0%, #FCFFFE 20%, #B6B6B6 20%, #B6B6B6 80%, #FCFFFE 80%, #FCFFFE 100%)",
-                    }}
-                />
-
-                {/* Right section: IOB, exercise mode, bolus, basal */}
-                <BasalAndBolus
-                    basalrate={userProfile.basalRate}
-                    emEnabled={userProfile.emEnabled}
-                    iob={userProfile.iob}
-                    isRunning={isRunning}
-                    onOpenBolus={() => setIsBolusOpen(true)}
-                />
             </div>
 
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "100%",
-                    flexDirection: "row-reverse",
-                }}
-            >
+            <div className="flex justify-between items-center px-4 pt-2 sm:pt-4">
+                {/* Start/stop button */}
+                <div className="flex items-center">
+                    {loading ? (
+                        <span className="text-sm">Processing...</span>
+                    ) : (
+                        <img
+                            src={isRunning ? "/stopsim.svg" : "/startsim.svg"}
+                            alt={
+                                isRunning
+                                    ? "Stop Simulation"
+                                    : "Start Simulation"
+                            }
+                            className="w-10 h-10 cursor-pointer"
+                            onClick={handleClick}
+                        />
+                    )}
+                </div>
+
                 {/* Time selector */}
                 <ToggleButtonGroup
                     value={selectedChartTimespan}
@@ -349,65 +416,18 @@ const Dashboard = () => {
                             setSelectedChartTimespan(newValue)
                     }}
                     aria-label="chart timespan"
-                    sx={{
-                        borderBottom: "2px solid #666",
-                        borderRadius: 0,
-                        width: "11%",
-                        justifyContent: "flex-start",
-                        height: "2.3rem",
-                        marginTop: "0.9rem",
-                        marginRight: "2.8rem",
-                    }}
+                    className="flex items-center justify-end"
                 >
                     {[4, 8, 12, 24].map((hrs) => (
                         <ToggleButton
                             key={hrs}
                             value={hrs}
-                            sx={{
-                                textTransform: "none",
-                                fontWeight: "bold",
-                                color: "#666",
-                                "&.Mui-selected": {
-                                    color: "black",
-                                    borderBottom: "2px solid black",
-                                    backgroundColor: "transparent",
-                                },
-                                "&:hover": {
-                                    backgroundColor: "transparent",
-                                },
-                            }}
+                            className="text-sm font-bold text-gray-600 hover:bg-transparent hover:text-gray-900"
                         >
                             {hrs}hr
                         </ToggleButton>
                     ))}
                 </ToggleButtonGroup>
-
-                {/* Start/stop button */}
-                <div
-                    className="btn-group"
-                    style={{
-                        flexGrow: 0.035,
-                        display: "flex",
-                        justifyContent: "flex-end",
-                    }}
-                >
-                    {loading ? (
-                        <span>Processing...</span>
-                    ) : (
-                        <img
-                            src={isRunning ? "/stopsim.svg" : "/startsim.svg"}
-                            alt={
-                                isRunning
-                                    ? "Stop Simulation"
-                                    : "Start Simulation"
-                            }
-                            width="50"
-                            height="50"
-                            onClick={handleClick}
-                            style={{ cursor: "pointer" }}
-                        />
-                    )}
-                </div>
             </div>
 
             <GlucoseChart
@@ -418,10 +438,7 @@ const Dashboard = () => {
             />
 
             {/* Footer */}
-            {/* <div className="dash-footer">
-                <p>Copyright / Attributions</p>
-                <p>Medical Disclaimer</p>
-            </div> */}
+            <FooterModals />
         </div>
     )
 }

@@ -91,6 +91,7 @@ class GlucoseSerializer(serializers.ModelSerializer):
         fields = ["id", "timestamp", "reading", "trend", "patient"]
         extra_kwargs = {"patient": {"read_only": True}}
 
+
 class SensorSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
@@ -108,11 +109,18 @@ class SensorSettingsSerializer(serializers.ModelSerializer):
         )
         instance.save()
         return instance
-    
+
+
 class PumpSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["basal_rate", "bolus_max", "max_iob", "carb_ratio", "insulin_duration"]
+        fields = [
+            "basal_rate",
+            "bolus_max",
+            "max_iob",
+            "carb_ratio",
+            "insulin_duration",
+        ]
         extra_kwargs = {field: {"required": False} for field in fields}
 
     def update(self, instance, validated_data):

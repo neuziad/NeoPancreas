@@ -4,7 +4,7 @@ import "../styles/Modals.css"
 import axios from "axios"
 import { ACCESS_TOKEN } from "../constants"
 
-const EXERCISE_MODE_MODIFIER = 0.75
+const EXERCISE_MODE_MODIFIER = 0.25
 
 const BolusModal = ({
     isOpen,
@@ -20,7 +20,6 @@ const BolusModal = ({
 }) => {
     const [carbs, setCarbs] = useState(0)
 
-    // Function to calculate bolus
     const calculateBolus = useCallback(() => {
         if (currentGlucose < glucoseMin) return 0
 
@@ -30,12 +29,7 @@ const BolusModal = ({
         if (emEnabled) bolusDose *= EXERCISE_MODE_MODIFIER
 
         bolusDose -= insulinOnBoard
-
-        // Ensure bolus is within limits
-        bolusDose = Math.max(0, Math.min(bolusDose, maxBolus))
-
-        // Round to nearest 0.05 for pump precision
-        return Math.round(bolusDose / 0.05) * 0.05
+        return Math.max(0, Math.min(bolusDose, maxBolus)).toFixed(2)
     }, [
         carbs,
         carbRatio,
@@ -54,10 +48,6 @@ const BolusModal = ({
         setBolus(calculateBolus())
     }, [calculateBolus])
 
-    // Handle changes
-    const handleCarbsChange = (e) => { setCarbs(e.target.value) }
-
-    // Handle the sending of bolus data to backend (or "injecting")
     const handleBolusInjection = async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
@@ -65,172 +55,98 @@ const BolusModal = ({
                 alert("You must be logged in to inject bolus.")
                 return
             }
-    
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/inject-bolus/`,
                 { bolus },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             )
-    
+
             console.log("✅ Bolus injection recorded:", response.data)
-            alert("Bolus injection recorded! It will be applied for the next glucose reading.")
+            alert(
+                "Bolus injection recorded! It will be applied for the next glucose reading."
+            )
         } catch (error) {
-            console.error("❌ Error injecting bolus:", error)
-            alert("Failed to inject bolus.")
+            alert("Failed to inject bolus: ", error)
         }
     }
 
     if (!isOpen) return null
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content bolus-modal">
-                <button className="close-btn" onClick={onClose}>
+        <div className="fixed inset-0 flex items-center justify-center modal-overlay">
+            <div className="bg-[#BCD4EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
+                <button
+                    className="absolute top-3 right-3 text-xl"
+                    style={{ cursor: "pointer" }}
+                    onClick={onClose}
+                >
                     ×
                 </button>
-
-                <h2>Carbohydrates</h2>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/carbs.svg"
-                        alt="Carbs"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
-                    >
-                        <label
-                            htmlFor="carbs-input"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
+                <h2 className="font-semibold text-lg">Carbohydrates</h2>
+                <div className="flex items-center gap-2 mt-2 justify-center">
+                    <img src="/carbs.svg" alt="Carbs" className="w-6 h-6" />
+                    <div className="flex flex-col w-4/5">
+                        <label className="text-xs text-gray-700">
                             Enter carbs (g)
                         </label>
                         <input
-                            id="carbs-input"
                             type="number"
-                            step={0.5}
-                            min={0}
-                            max={maxBolus}
+                            step="0.5"
+                            min="0"
                             value={carbs}
-                            onChange={handleCarbsChange}
-                            className="input-box"
-                            placeholder="Enter carbs (g)"
+                            onChange={(e) => setCarbs(e.target.value)}
+                            className="border rounded-md px-3 py-1 text-center w-full"
                         />
                     </div>
                 </div>
-
-                <h2>Correction</h2>
-                {/* Correction Section */}
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
-                    }}
-                >
+                <h2 className="font-semibold text-lg mt-4">Correction</h2>
+                {[
+                    {
+                        label: "Current reading (mmol/L)",
+                        icon: "/currentreading.svg",
+                        value: currentGlucose.toFixed(1) + " mmol/L",
+                    },
+                    {
+                        label: "Correction factor (U)",
+                        icon: "/correctfactor.svg",
+                        value: correctionFactor + " U",
+                    },
+                    {
+                        label: "Insulin on board (U)",
+                        icon: "/maxiob.svg",
+                        value: insulinOnBoard + " U",
+                    },
+                ].map(({ label, icon, value }) => (
                     <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
+                        key={label}
+                        className="flex items-center gap-2 mt-2 justify-center"
                     >
-                        <img
-                            src="/currentreading.svg"
-                            alt="Current reading"
-                            style={{ width: 24, height: 24 }}
-                        />
-                        <input
-                            type="text"
-                            value={`Current reading: ${parseFloat(currentGlucose).toFixed(1)} mmol/L`}
-                            readOnly
-                            className="input-box"
-                            style={{ width: "240px" }}
-                        />
+                        <img src={icon} alt={label} className="w-6 h-6" />
+                        <div className="flex flex-col w-3/5">
+                            <label className="text-xs text-gray-700">
+                                {label}
+                            </label>
+                            <input
+                                type="text"
+                                value={value}
+                                readOnly
+                                className="border rounded-md px-3 py-1 text-center w-full"
+                            />
+                        </div>
                     </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <img
-                            src="/correctfactor.svg"
-                            alt="Correction factor"
-                            style={{ width: 24, height: 24 }}
-                        />
-                        <input
-                            type="text"
-                            value={`Correction factor: ${correctionFactor} U`}
-                            readOnly
-                            className="input-box"
-                            style={{ width: "240px" }}
-                        />
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <img
-                            src="/maxiob.svg"
-                            alt="Insulin on board"
-                            style={{ width: 24, height: 24 }}
-                        />
-                        <input
-                            type="text"
-                            value={`Insulin on board: ${insulinOnBoard} U`}
-                            readOnly
-                            className="input-box"
-                            style={{ width: "240px" }}
-                        />
-                    </div>
-                </div>
+                ))}
 
-                {/* Horizontal Separator */}
-                <div
-                    style={{
-                        width: "400px",
-                        height: "1px",
-                        background:
-                            "linear-gradient(to right, #BCD4EB 0%, #BCD4EB 20%, #B6B6B6 20%, #B6B6B6 80%, #BCD4EB 80%, #BCD4EB 100%)",
-                        margin: "16px 0",
-                    }}
-                />
-
-                <h2>Total Bolus (U)</h2>
+                <div className="border-t border-gray-400 my-3"></div>
+                <h2 className="font-semibold text-lg">Total Bolus (U)</h2>
                 <input
                     type="text"
-                    value={parseFloat(bolus).toFixed(2)}
+                    value={bolus}
                     readOnly
-                    className="total-bolus"
-                    style={{ width: "280px" }}
+                    className="border rounded-md px-3 py-1 text-center w-4/5 bg-gray-300"
                 />
-
-                <button className="inject-btn" onClick={handleBolusInjection}>INJECT</button>
+                <button className="inject-btn" onClick={handleBolusInjection}>
+                    INJECT
+                </button>
             </div>
         </div>
     )
@@ -244,6 +160,7 @@ const SensorModal = ({
     glucoseTarget: initialGlucoseTarget,
     glucoseMax: initialGlucoseMax,
     correctionFactor: initialCorrectionFactor,
+    fetchUserProfile,
 }) => {
     const [glucoseMin, setGlucoseMin] = useState(initialGlucoseMin)
     const [glucoseTarget, setGlucoseTarget] = useState(initialGlucoseTarget)
@@ -253,12 +170,6 @@ const SensorModal = ({
     )
 
     useEffect(() => {
-        console.log("Received props:", {
-            initialGlucoseMin,
-            initialGlucoseTarget,
-            initialGlucoseMax,
-            initialCorrectionFactor,
-        })
         setGlucoseMin(initialGlucoseMin || 0)
         setGlucoseTarget(initialGlucoseTarget || 0)
         setGlucoseMax(initialGlucoseMax || 0)
@@ -270,24 +181,15 @@ const SensorModal = ({
         initialCorrectionFactor,
     ])
 
-    // Handle changes
-    const handleGlucoseMinChange = (e) => setGlucoseMin(e.target.value)
-    const handleGlucoseTargetChange = (e) => setGlucoseTarget(e.target.value)
-    const handleGlucoseMaxChange = (e) => setGlucoseMax(e.target.value)
-    const handleCorrectionFactorChange = (e) =>
-        setCorrectionFactor(e.target.value)
-
     if (!isOpen) return null
 
     const handleSave = async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
-
             if (!token) {
                 alert("You must be logged in to save settings.")
                 return
             }
-
             const response = await axios.patch(
                 `${import.meta.env.VITE_API_URL}/api/sensor-settings/`,
                 {
@@ -296,19 +198,13 @@ const SensorModal = ({
                     glucose_max: glucoseMax,
                     correction_factor: correctionFactor,
                 },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             )
 
             console.log("✅ Sensor settings updated:", response.data)
             alert("Settings saved successfully!")
-
+            fetchUserProfile()
         } catch (error) {
-            console.error(
-                "❌ Error saving sensor settings:",
-                error.response || error
-            )
             alert(
                 `Failed to save settings: ${error.response?.data?.detail || "Unknown error"}`
             )
@@ -316,259 +212,106 @@ const SensorModal = ({
     }
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content sensor-modal">
-                <button className="close-btn" onClick={onClose}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay">
+            <div className="bg-[#F5E1C8] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
+                <button
+                    className="absolute top-3 right-3 text-xl"
+                    style={{ cursor: "pointer" }}
+                    onClick={onClose}
+                >
                     ×
                 </button>
-                <h3>
+                <h3 className="font-semibold text-md mb-2">
                     You are only able to view which UVA/PADOVA diabetic profile
                     you have been given.
                 </h3>
-                <p style={{ marginTop: "-3%" }}>
+                <p className="text-sm text-gray-600 mb-4">
                     In a theoretical future build, you would be able to connect
-                    your CGM. However due to the scope of this project and
+                    your CGM. However, due to the scope of this project and
                     ethical considerations, you are not able to do so in this
                     version.
                 </p>
-                {/* Horizontal separator */}
-                <div
-                    style={{
-                        width: "400px",
-                        height: "1px",
-                        background:
-                            "linear-gradient(to right, #F5E1C8 0%, #F5E1C8 20%, #B6B6B6 20%, #B6B6B6 80%, #F5E1C8 80%, #F5E1C8 100%)",
-                    }}
-                />
-                <h2>Simulation Profile</h2>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
+                <div className="border-t border-gray-400 my-3"></div>
+
+                <h2 className="font-semibold text-lg">Simulation Profile</h2>
+                <div className="flex items-center gap-2 mt-2 justify-center">
                     <img
                         src="/user.svg"
                         alt="Diabetic profile"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
+                        className="w-6 h-6"
                     />
-
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
-                    >
-                        <label
-                            htmlFor="diabetic-profile"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                                whiteSpace: "normal",
-                                maxWidth: "100%",
-                            }}
-                        >
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-700">
                             Diabetic profile
                         </label>
                         <input
-                            id="diabetic-profile"
                             type="text"
                             value={diabeticProfile}
                             readOnly
-                            className="input-box"
-                            style={{
-                                backgroundColor: "#e4e4e4",
-                                textAlign: "center",
-                            }}
+                            className="bg-gray-300 text-center rounded-md px-3 py-1"
                         />
                     </div>
                 </div>
-                <h2>Glucose Targets & Correction</h2>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/minglucose.svg"
-                        alt="Minimum glucose level"
-                        style={{ width: 24, height: 24, marginRight: "4%" }}
-                    />
+
+                <h2 className="font-semibold text-lg mt-4">
+                    Glucose Targets & Correction
+                </h2>
+                {[
+                    {
+                        label: "Minimum glucose (mmol/L)",
+                        icon: "/minglucose.svg",
+                        value: glucoseMin,
+                        setter: setGlucoseMin,
+                        min: 2.8,
+                        max: 4.0,
+                    },
+                    {
+                        label: "Target glucose (mmol/L)",
+                        icon: "/target.svg",
+                        value: glucoseTarget,
+                        setter: setGlucoseTarget,
+                        min: 5.5,
+                        max: 8.5,
+                    },
+                    {
+                        label: "Maximum glucose (mmol/L)",
+                        icon: "/maxglucose.svg",
+                        value: glucoseMax,
+                        setter: setGlucoseMax,
+                        min: 9.0,
+                        max: 15.0,
+                    },
+                    {
+                        label: "Correction factor (U/mmol/L)",
+                        icon: "/correctfactor.svg",
+                        value: correctionFactor,
+                        setter: setCorrectionFactor,
+                        min: 0.1,
+                        max: 10.0,
+                    },
+                ].map(({ label, icon, value, setter, min, max }) => (
                     <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
+                        key={label}
+                        className="flex items-center gap-2 mt-2 justify-center"
                     >
-                        <label
-                            htmlFor="glucose-min"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                                whiteSpace: "normal",
-                                maxWidth: "100%",
-                            }}
-                        >
-                            Minimum glucose level (mmol/L)
-                        </label>
-                        <input
-                            id="glucose-min"
-                            type="number"
-                            step={0.1}
-                            min={2.8}
-                            max={4.0}
-                            value={glucoseMin}
-                            onChange={handleGlucoseMinChange}
-                            className="input-box"
-                        />
+                        <img src={icon} alt={label} className="w-6 h-6" />
+                        <div className="flex flex-col w-3/5">
+                            <label className="text-xs text-gray-700">
+                                {label}
+                            </label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min={min}
+                                max={max}
+                                value={value}
+                                onChange={(e) => setter(e.target.value)}
+                                className="border rounded-md px-2 py-1 text-center w-full"
+                            />
+                        </div>
                     </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/target.svg"
-                        alt="Target glucose level"
-                        style={{ width: 24, height: 24, marginRight: "4%" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
-                    >
-                        <label
-                            htmlFor="glucose-target"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                                whiteSpace: "normal",
-                                maxWidth: "100%",
-                            }}
-                        >
-                            Target glucose level (mmol/L)
-                        </label>
-                        <input
-                            id="glucose-target"
-                            type="number"
-                            step={0.1}
-                            min={5.5}
-                            max={8.5}
-                            value={glucoseTarget}
-                            onChange={handleGlucoseTargetChange}
-                            className="input-box"
-                        />
-                    </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/maxglucose.svg"
-                        alt="Maximum glucose level"
-                        style={{ width: 24, height: 24, marginRight: "4%" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
-                    >
-                        <label
-                            htmlFor="glucose-max"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                                whiteSpace: "normal",
-                                maxWidth: "100%",
-                            }}
-                        >
-                            Maximum glucose level (mmol/L)
-                        </label>
-                        <input
-                            id="glucose-max"
-                            type="number"
-                            step={0.1}
-                            min={9.0}
-                            max={15.0}
-                            value={glucoseMax}
-                            onChange={handleGlucoseMaxChange}
-                            className="input-box"
-                        />
-                    </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/correctfactor.svg"
-                        alt="Correction factor"
-                        style={{ width: 24, height: 24, marginRight: "4%" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
-                    >
-                        <label
-                            htmlFor="correction-factor"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                                whiteSpace: "normal",
-                                maxWidth: "100%",
-                            }}
-                        >
-                            Correction factor (U/mmol/L)
-                        </label>
-                        <input
-                            id="correction-factor"
-                            type="number"
-                            step={0.1}
-                            value={parseFloat(correctionFactor).toFixed(1)}
-                            min={0.1}
-                            max={10.0}
-                            onChange={handleCorrectionFactorChange}
-                            className="input-box"
-                        />
-                    </div>
-                </div>
+                ))}
+
                 <button className="sensor-save-btn" onClick={handleSave}>
                     SAVE
                 </button>
@@ -584,7 +327,8 @@ const PumpModal = ({
     maxBolus: initialMaxBolus,
     maxIOB: initialMaxIOB,
     insulinDuration: initialInsulinDuration,
-    carbRatio: initialCarbRatio
+    carbRatio: initialCarbRatio,
+    fetchUserProfile,
 }) => {
     const [basalRate, setBasalRate] = useState(initialBasalRate)
     const [maxBolus, setMaxBolus] = useState(initialMaxBolus)
@@ -595,44 +339,27 @@ const PumpModal = ({
     const [carbRatio, setCarbRatio] = useState(initialCarbRatio)
 
     useEffect(() => {
-        console.log("Received props:", {
-            initialBasalRate,
-            initialMaxBolus,
-            initialMaxIOB,
-            initialInsulinDuration,
-            initialCarbRatio,
-        })
-        setBasalRate(initialBasalRate)
-        setMaxBolus(initialMaxBolus)
-        setMaxIOB(initialMaxIOB)
-        setInsulinDuration(initialInsulinDuration)
-        setCarbRatio(initialCarbRatio)
+        setBasalRate(initialBasalRate || 0)
+        setMaxBolus(initialMaxBolus || 0)
+        setMaxIOB(initialMaxIOB || 0)
+        setInsulinDuration(initialInsulinDuration || 0)
+        setCarbRatio(initialCarbRatio || 0)
     }, [
         initialBasalRate,
-        initialMaxIOB,
         initialMaxBolus,
+        initialMaxIOB,
         initialInsulinDuration,
         initialCarbRatio,
     ])
 
-    // Handle changes
-    const handleBasalRateChange = (e) => setBasalRate(e.target.value)
-    const handleMaxBolusChange = (e) => setMaxBolus(e.target.value)
-    const handleMaxIOBChange = (e) => setMaxIOB(e.target.value)
-    const handleInsulinDurationChange = (e) =>
-        setInsulinDuration(e.target.value)
-    const handleCarbRatioChange = (e) => setCarbRatio(e.target.value)
-
     const handleSave = async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
-
             if (!token) {
                 alert("You must be logged in to save settings.")
                 return
             }
-
-            const response = await axios.patch(
+            await axios.patch(
                 `${import.meta.env.VITE_API_URL}/api/pump-settings/`,
                 {
                     basal_rate: basalRate,
@@ -641,18 +368,11 @@ const PumpModal = ({
                     insulin_duration: insulinDuration,
                     carb_ratio: carbRatio,
                 },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             )
-
-            console.log("✅ Pump settings updated:", response.data)
-            alert("Settings saved successfully!")
+            alert("Pump settings saved successfully!")
+            fetchUserProfile()
         } catch (error) {
-            console.error(
-                "❌ Error saving pump settings:",
-                error.response || error
-            )
             alert(
                 `Failed to save settings: ${error.response?.data?.detail || "Unknown error"}`
             )
@@ -662,264 +382,193 @@ const PumpModal = ({
     if (!isOpen) return null
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content pump-modal">
-                <button className="close-btn" onClick={onClose}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay">
+            <div className="bg-[#EAC7EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
+                <button
+                    className="absolute top-3 right-3 text-xl"
+                    style={{ cursor: "pointer" }}
+                    onClick={onClose}
+                >
                     ×
                 </button>
-                <h2>Basal & Safety Settings</h2>
+                <h2 className="font-semibold text-lg">
+                    Basal & Safety Settings
+                </h2>
 
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/basalrate.svg"
-                        alt="Basal rate"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
-                    />
+                {[
+                    {
+                        label: "Basal rate (U/hr)",
+                        icon: "/basalrate.svg",
+                        value: basalRate,
+                        setter: setBasalRate,
+                        min: 0.75,
+                        max: 25.0,
+                    },
+                    {
+                        label: "Maximum bolus (U)",
+                        icon: "/maxiob.svg",
+                        value: maxBolus,
+                        setter: setMaxBolus,
+                        min: 15,
+                        max: 30,
+                    },
+                    {
+                        label: "Maximum IOB (U)",
+                        icon: "/maxiob.svg",
+                        value: maxIOB,
+                        setter: setMaxIOB,
+                        min: 25,
+                        max: 50,
+                    },
+                    {
+                        label: "Carb ratio (g/U)",
+                        icon: "/carbratio.svg",
+                        value: carbRatio,
+                        setter: setCarbRatio,
+                        min: 1,
+                        max: 100,
+                    },
+                ].map(({ label, icon, value, setter, min, max }) => (
                     <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
+                        key={label}
+                        className="flex items-center gap-2 mt-2 justify-center"
                     >
-                        <label
-                            htmlFor="basal-rate"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
-                            Basal rate (U/hr)
-                        </label>
-                        <input
-                            id="basal-rate"
-                            type="number"
-                            step={0.05}
-                            min={0.75}
-                            max={25.0}
-                            value={basalRate}
-                            onChange={handleBasalRateChange}
-                            className="input-box"
-                            placeholder="Basal rate (U/hr)"
-                        />
+                        <img src={icon} alt={label} className="w-6 h-6" />
+                        <div className="flex flex-col w-3/5">
+                            <label className="text-xs text-gray-700">
+                                {label}
+                            </label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min={min}
+                                max={max}
+                                value={value}
+                                onChange={(e) => setter(e.target.value)}
+                                className="border rounded-md px-2 py-1 text-center w-full"
+                            />
+                        </div>
                     </div>
-                </div>
+                ))}
 
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/maxiob.svg"
-                        alt="Maximum IOB"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
-                    >
-                        <label
-                            htmlFor="max-iob"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
-                            Maximum IOB (U)
-                        </label>
-                        <input
-                            id="max-iob"
-                            type="number"
-                            step={0.5}
-                            min={25}
-                            max={50}
-                            value={maxIOB}
-                            onChange={handleMaxIOBChange}
-                            className="input-box"
-                            placeholder="Maximum IOB (U)"
-                        />
-                    </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/maxiob.svg"
-                        alt="Maximum bolus"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
-                    >
-                        <label
-                            htmlFor="max-bolus"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
-                            Maximum bolus (U)
-                        </label>
-                        <input
-                            id="max-bolus"
-                            type="number"
-                            step={0.5}
-                            min={15}
-                            max={30}
-                            value={maxBolus}
-                            onChange={handleMaxBolusChange}
-                            className="input-box"
-                            placeholder="Maximum bolus (U)"
-                        />
-                    </div>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
-                    <img
-                        src="/carbratio.svg"
-                        alt="Carb ratio"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
-                    >
-                        <label
-                            htmlFor="carb-ratio"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
-                            Carb ratio (g/U)
-                        </label>
-                        <input
-                            id="carb-ratio"
-                            type="number"
-                            step={1}
-                            min={1}
-                            max={100}
-                            value={carbRatio}
-                            onChange={handleCarbRatioChange}
-                            className="input-box"
-                            placeholder="Carb ratio (g/U)"
-                        />
-                    </div>
-                </div>
-                <p>
+                <p className="text-xs text-gray-600 mt-3">
                     Your basal rate should constitute{" "}
                     <strong>~40% of your total daily dose</strong> of insulin.
                     Please consult with your doctor before increasing your
                     maximum IOB.
                 </p>
 
-                {/* Horizontal Separator */}
-                <div
-                    style={{
-                        width: "400px",
-                        height: "1px",
-                        background:
-                            "linear-gradient(to right, #EAC7EB 0%, #EAC7EB 20%, #B6B6B6 20%, #B6B6B6 80%, #EAC7EB 80%, #EAC7EB 100%)",
-                    }}
-                />
+                <div className="border-t border-gray-400 my-3"></div>
 
-                <h2>Insulin Pharmacokinetics</h2>
+                <h2 className="font-semibold text-lg">
+                    Insulin Pharmacokinetics
+                </h2>
 
-                {/* Insulin Duration */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                    }}
-                >
+                <div className="flex items-center gap-2 mt-2 justify-center">
                     <img
                         src="/insuldur.svg"
                         alt="Insulin duration"
-                        style={{ width: 24, height: 24, marginRight: "8px" }}
+                        className="w-6 h-6"
                     />
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            minWidth: "280px",
-                        }}
-                    >
-                        <label
-                            htmlFor="insulin-duration"
-                            style={{
-                                fontSize: 12,
-                                color: "#555",
-                                marginBottom: 4,
-                                textAlign: "center",
-                            }}
-                        >
+                    <div className="flex flex-col w-3/5">
+                        <label className="text-xs text-gray-700">
                             Duration of active insulin (minutes)
                         </label>
                         <input
-                            id="insulin-duration"
                             type="number"
-                            step={1}
+                            step="1"
                             min={180}
                             max={400}
                             value={insulinDuration}
-                            onChange={handleInsulinDurationChange}
-                            className="input-box"
-                            placeholder="Duration of active insulin (minutes)"
+                            onChange={(e) => setInsulinDuration(e.target.value)}
+                            className="border rounded-md px-2 py-1 text-center w-full"
                         />
                     </div>
                 </div>
 
-                <button className="pump-save-btn" onClick={handleSave}>
+                <button className="pump-save-btn mt-4" onClick={handleSave}>
                     SAVE
                 </button>
             </div>
+        </div>
+    )
+}
+
+const FooterModals = () => {
+    const [isAttributionsOpen, setIsAttributionsOpen] = useState(false)
+    const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false)
+
+    return (
+        <div className="dash-footer flex justify-center items-center gap-4 text-center text-sm">
+            <p
+                onClick={() => setIsAttributionsOpen(true)}
+                style={{ cursor: "pointer" }}
+            >
+                Copyright / Attributions
+            </p>
+            <p
+                style={{ cursor: "pointer" }}
+                onClick={() => setIsDisclaimerOpen(true)}
+            >
+                Medical Disclaimer
+            </p>
+
+            {/* Copyright / Attributions Modal */}
+            {isAttributionsOpen && (
+                <div
+                    className="fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+                    onClick={() => setIsAttributionsOpen(false)}
+                >
+                    <div
+                        className="bg-white dark:bg-gray-800 p-4 rounded-md w-96 mx-auto mt-32"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-lg font-bold mb-2">
+                            Copyright / Attributions
+                        </h2>
+                        <ul className="list-disc pl-4">
+                            <li>All rights reserved</li>
+                            <li>
+                                Some assets may be attributed to their original
+                                creators
+                            </li>
+                        </ul>
+                        <button
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            onClick={() => setIsAttributionsOpen(false)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Medical Disclaimer Modal */}
+            {isDisclaimerOpen && (
+                <div
+                    className="fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+                    onClick={() => setIsDisclaimerOpen(false)}
+                >
+                    <div
+                        className="bg-white dark:bg-gray-800 p-4 rounded-md w-96 mx-auto mt-32"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-lg font-bold mb-2">
+                            Medical Disclaimer
+                        </h2>
+                        <p className="mb-4">
+                            This app does not provide medical advice. Always
+                            consult with a healthcare professional.
+                        </p>
+                        <button
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            onClick={() => setIsDisclaimerOpen(false)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -946,6 +595,7 @@ SensorModal.propTypes = {
     glucoseTarget: PropTypes.number.isRequired,
     glucoseMax: PropTypes.number.isRequired,
     correctionFactor: PropTypes.number.isRequired,
+    fetchUserProfile: PropTypes.func.isRequired,
 }
 
 PumpModal.propTypes = {
@@ -956,6 +606,7 @@ PumpModal.propTypes = {
     maxIOB: PropTypes.number.isRequired,
     insulinDuration: PropTypes.number.isRequired,
     carbRatio: PropTypes.number.isRequired,
+    fetchUserProfile: PropTypes.func.isRequired,
 }
 
-export { BolusModal, SensorModal, PumpModal }
+export { BolusModal, SensorModal, PumpModal, FooterModals }
