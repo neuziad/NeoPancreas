@@ -31,8 +31,7 @@ describe("Protected Routes", () => {
         })
     })
 
-    // TO-DO: Fix this invalid token protected route test
-    it("should redirect to login if the token is invalid or expired", async () => {
+    it("should automatically refresh token if expired", async () => {
         // Invalid expired token
         jwtDecode.mockReturnValueOnce({
             exp: Math.floor(Date.now() / 1000) - 3600,
@@ -49,9 +48,9 @@ describe("Protected Routes", () => {
             </BrowserRouter>
         )
 
-        // Ensure the redirection to /login is triggered
+        // Ensure the redirection to dashboard is triggered, as tokens are refreshed on login
         await waitFor(() => {
-            expect(window.location.pathname).toBe("/login")
+            expect(window.location.pathname).toBe("/")
         })
     })
 

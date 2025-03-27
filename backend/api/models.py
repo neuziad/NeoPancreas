@@ -230,7 +230,7 @@ class UserProfile(models.Model):
         if current_glucose < self.glucose_min:
             return Decimal("0")
 
-        bolus_per_step = carbs / self.carb_ratio
+        bolus_per_step = carbs / Decimal(str(self.carb_ratio))
         bolus_per_step += (
             current_glucose - self.glucose_target
         ) / self.correction_factor

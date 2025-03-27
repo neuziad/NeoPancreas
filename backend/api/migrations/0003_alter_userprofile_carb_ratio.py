@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0002_remove_userprofile_cob_userprofile_pending_bolus'),
+        ("api", "0002_remove_userprofile_cob_userprofile_pending_bolus"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='userprofile',
-            name='carb_ratio',
+            model_name="userprofile",
+            name="carb_ratio",
             field=models.DecimalField(decimal_places=1, default=10.0, max_digits=4),
         ),
     ]

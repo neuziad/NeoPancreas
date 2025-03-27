@@ -24,7 +24,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "carb_ratio": {"default": 10.0},
             "insulin_duration": {"default": 240},
             "iob": {"default": 0.00},
-            "cob": {"default": 0.00},
             "max_iob": {"default": 25.0},
             "diabetic_profile": {"required": False},
             "em_enabled": {"default": False},

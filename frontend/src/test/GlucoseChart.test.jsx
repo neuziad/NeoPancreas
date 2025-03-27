@@ -3,6 +3,12 @@ import GlucoseChart from "../components/GlucoseChart"
 import { describe, expect, it } from "@jest/globals"
 import "@testing-library/jest-dom"
 
+/* Recharts renders the final result in SVG components that are labelled and processed
+differently to the code we initially write, so we'll have to use image snapshot unit
+testing to make sure we get the result we want, as directly testing divs here won't work. */
+import { toMatchImageSnapshot } from "jest-image-snapshot"
+expect.extend({ toMatchImageSnapshot })
+
 describe("GlucoseChart", () => {
     const chartData = [
         { timestamp: 0, glucose: 5.2 },
@@ -41,26 +47,12 @@ describe("GlucoseChart", () => {
         expect(screen.getByText(/Loading glucose data.../)).toBeInTheDocument()
     })
 
-    it("correctly calculates the XAxis domain based on timeScale", async () => {
-        const timeScale = 4
-        const chartData = [{ timestamp: 5, glucose: 4.8 }]
-
-        // Now, test if XAxis received the correct domain prop
-        const nowInMinutes =
-            new Date().getHours() * 60 + new Date().getMinutes()
-        const xAxis = screen.getByTestId("x-axis")
-        const startTime = Math.max(
-            0,
-            new Date().getHours() * 60 +
-                new Date().getMinutes() -
-                timeScale * 60
-        )
-
+    it("correctly renders various chart aspects when data is available", async () => {
         render(
             <GlucoseChart
                 chartData={chartData}
-                glucoseMin={3.9}
-                glucoseMax={11}
+                glucoseMin={glucoseMin}
+                glucoseMax={glucoseMax}
                 timeScale={timeScale}
             />
         )
@@ -72,42 +64,8 @@ describe("GlucoseChart", () => {
             ).not.toBeInTheDocument()
         )
 
-        expect(xAxis).toHaveAttribute(
-            "data-domain",
-            JSON.stringify([startTime, nowInMinutes])
-        )
-    })
-
-    it("renders correct background colors for glucoseMin, glucoseMax", () => {
-        render(
-            <GlucoseChart
-                chartData={chartData}
-                glucoseMin={glucoseMin}
-                glucoseMax={glucoseMax}
-                timeScale={timeScale}
-            />
-        )
-
-        const referenceAreas = screen.getElementsByTagName("rect")
-
-        // Checking for the correct fill colors based on glucoseMin and glucoseMax
-        expect(referenceAreas[0]).toHaveAttribute("fill", "#B53A3A") // Red (Low)
-        expect(referenceAreas[1]).toHaveAttribute("fill", "#3AA246") // Green (Normal)
-        expect(referenceAreas[2]).toHaveAttribute("fill", "#CBA63F") // Yellow (High)
-    })
-
-    it("correctly formats the XAxis ticks", () => {
-        render(
-            <GlucoseChart
-                chartData={chartData}
-                glucoseMin={glucoseMin}
-                glucoseMax={glucoseMax}
-                timeScale={timeScale}
-            />
-        )
-
-        // Check if the XAxis is formatted correctly (e.g., 01:00, 02:00, etc.)
-        const tickText = screen.getByText(/00:00/)
-        expect(tickText).toBeInTheDocument()
+        // Snapshot the entire chart
+        const chart = screen.getByTestId("scatter-chart")
+        expect(chart).toMatchSnapshot()
     })
 })

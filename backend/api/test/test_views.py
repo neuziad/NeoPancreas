@@ -47,7 +47,6 @@ class SimulationViewTest(TestCase):
             carb_ratio=10.0,
             insulin_duration=240,
             iob=0.0,
-            cob=0.0,
             max_iob=25.0,
             em_enabled=False,
         )

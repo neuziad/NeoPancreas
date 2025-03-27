@@ -253,9 +253,11 @@ const Dashboard = () => {
                     <img
                         src="/menu.svg"
                         className="w-6 h-6 cursor-pointer z-50"
-                        onClick={() => setIsMenuOpen((prev) => {
-                            return !prev
-                        })}
+                        onClick={() =>
+                            setIsMenuOpen((prev) => {
+                                return !prev
+                            })
+                        }
                         alt="Menu"
                     />
                 </div>

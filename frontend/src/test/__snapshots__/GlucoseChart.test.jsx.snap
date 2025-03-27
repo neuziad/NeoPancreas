@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GlucoseChart correctly renders various chart aspects when data is available 1`] = `
+<div
+  class="w-screen relative"
+  data-testid="scatter-chart"
+>
+  <div
+    class="recharts-responsive-container"
+    style="width: 100%; height: 440px; min-width: 0;"
+  />
+</div>
+`;

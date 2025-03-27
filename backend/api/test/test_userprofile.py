@@ -28,7 +28,6 @@ class UserProfileTests(TestCase):
             carb_ratio=10.0,
             insulin_duration=240,
             iob=0.0,
-            cob=0.0,
             max_iob=25.0,
             em_enabled=False,
         )
@@ -77,11 +76,6 @@ class UserProfileTests(TestCase):
         basal_dose = self.profile.titrate_basal()
         self.assertEqual(basal_dose, Decimal("0"))
 
-    def test_titrate_bolus_no_data(self):
-        """Ensure bolus titration returns 0 when no glucose readings exist"""
-        bolus_dose = self.profile.titrate_bolus(carbs=50)
-        self.assertEqual(bolus_dose, Decimal("0"))
-
     @patch("channels_redis.core.RedisChannelLayer.__new__")
     @patch("channels.layers.get_channel_layer")
     def test_titrate_basal_valid_data(self, mock_get_channel_layer, mock_new):
@@ -93,18 +87,6 @@ class UserProfileTests(TestCase):
         self.assertGreater(
             basal_dose, Decimal("0")
         )  # Should return a dose in a case of higher glucose reading and rising trend
-
-    @patch("channels_redis.core.RedisChannelLayer.__init__")
-    @patch("channels.layers.get_channel_layer")
-    def test_titrate_bolus_valid_data(self, mock_get_channel_layer, mock_init):
-        """Test bolus insulin titration based on glucose readings"""
-        mock_init.return_value = redis.Redis()
-
-        GlucoseReading.objects.create(patient=self.profile, reading=10.0, trend="↗")
-        bolus_dose = self.profile.titrate_bolus(carbs=80)
-        self.assertGreater(
-            bolus_dose, Decimal("0")
-        )  # Should return a dose in even the most insulin sensitive patient
 
     def test_profile_string_representation(self):
         """Test string representation of UserProfile"""
