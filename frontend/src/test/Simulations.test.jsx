@@ -38,7 +38,7 @@ describe("Simulation Functions", () => {
             const result = await startSimulation()
             expect(result).toBe(true)
             expect(api.post).toHaveBeenCalledWith(
-                `/api/start-simulation/${mockUserId}/`,
+                "/api/start-simulation/",
                 null,
                 expect.objectContaining({
                     headers: {
@@ -77,7 +77,7 @@ describe("Simulation Functions", () => {
             const result = await stopSimulation()
             expect(result).toBe(true)
             expect(api.post).toHaveBeenCalledWith(
-                `/api/stop-simulation/${mockUserId}/`,
+                `/api/stop-simulation/`,
                 null,
                 expect.objectContaining({
                     headers: {
@@ -114,7 +114,7 @@ describe("Simulation Functions", () => {
             const result = await getSimulationStatus()
             expect(result).toBe(true)
             expect(api.get).toHaveBeenCalledWith(
-                `/api/simulation-status/${mockUserId}/`,
+                `/api/simulation-status/`,
                 expect.objectContaining({
                     headers: {
                         Authorization: `Bearer ${mockToken}`,
@@ -183,3 +183,4 @@ describe("Simulation Functions", () => {
         })
     })
 })
+

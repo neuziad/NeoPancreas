@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import TimeInRangeBar from "../components/TimeInRangeBar"
 import GlucoseChart from "../components/GlucoseChart"
@@ -18,6 +18,7 @@ import {
     FooterModals,
 } from "../components/Modals"
 import AlertMonitor from "../components/Alerts"
+import { cacheGlucoseReading, retrieveCacheReadings } from "../components/UseCache"
 
 const WEBSOCKET_URL =
     import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8001/ws/glucose/"
@@ -37,14 +38,16 @@ const Dashboard = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     let carbs = 0
 
+    const fallbackData = retrieveCacheReadings()
+
     // Fetch status of simulation
     useEffect(() => {
         const status = getSimulationStatus()
         status.then((res) => setIsRunning(res))
     }, [])
 
-    // API fetching user profile attributes
-    const fetchUserProfile = async () => {
+    // Memoized API fetching user profile attributes
+    const fetchUserProfile = useCallback(async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
             const res = await axios.get(
@@ -70,11 +73,11 @@ const Dashboard = () => {
         } catch (error) {
             console.error("❌ Error fetching user profile:", error)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchUserProfile()
-    }, [])
+    }, [fetchUserProfile])
 
     // API fetching glucose data for 24h (Time in range bar)
     useEffect(() => {
@@ -93,10 +96,21 @@ const Dashboard = () => {
                         parseInt(item.timestamp.split(":")[1]),
                     glucose: parseFloat(item.glucose),
                 }))
+                
+                // Set time in range data
                 setTimeInRangeData(formattedData)
+
+                // Set cached data
+                formattedData.forEach((item) => {
+                    cacheGlucoseReading(item)
+                })
+
                 console.log("Initial time in range data:", formattedData)
             } catch (error) {
                 console.error("❌ Error fetching 24h glucose readings:", error)
+
+                // Set cached data
+                retrieveCacheReadings().then(cachedData => setTimeInRangeData(cachedData))
             }
         }
 
@@ -129,31 +143,34 @@ const Dashboard = () => {
                     `❌ Error fetching ${selectedChartTimespan}h glucose readings:`,
                     error
                 )
+
+                // Set cached data
+                setChartData(fallbackData)
             }
         }
 
         fetchDataForChart()
-    }, [selectedChartTimespan])
+    }, [selectedChartTimespan, fallbackData])
 
     // Fetch user full name (we must retrieve from User as opposed to UserProfile)
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/user/`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                )
-                setCurrentUser(res.data)
-            } catch (error) {
-                console.error("❌ Error fetching user:", error)
-            }
+    const fetchUser = useCallback(async () => {
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+            const res = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/user/`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+            setCurrentUser(res.data)
+        } catch (error) {
+            console.error("❌ Error fetching user:", error)
         }
-
-        fetchUser()
     }, [])
+
+    useEffect(() => {
+        fetchUser()
+    }, [fetchUser])
 
     // WebSocket for real-time updates
     useEffect(() => {
@@ -207,7 +224,7 @@ const Dashboard = () => {
         socket.onerror = (error) => console.error("❌ WebSocket Error:", error)
 
         return () => socket.close()
-    }, [selectedChartTimespan])
+    }, [fetchUserProfile, selectedChartTimespan])
 
     if (!userProfile) return <h1>Loading dashboard...</h1>
 

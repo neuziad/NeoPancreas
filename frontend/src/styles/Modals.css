@@ -11,63 +11,6 @@
     z-index: 1000;
 }
 
-.modal-content {
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
-    height: 74vh;
-    text-align: center;
-    position: relative;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.modal-content.sensor-modal {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-content: center;
-}
-
-.modal-content.pump-modal {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-content: center;
-}
-
-.bolus-modal {
-    background: #bcd4eb;
-}
-
-.sensor-modal {
-    background: #f5e1c8;
-}
-
-.pump-modal {
-    background: #eac7eb;
-}
-
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    border: none;
-    background: none;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.input-box,
-.total-bolus {
-    width: 100%;
-    max-width: 250px;
-    padding: 8px;
-    margin: 5px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    text-align: center;
-}
-
 .inject-btn {
     background: #15395f;
     color: white;

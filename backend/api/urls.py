@@ -13,10 +13,10 @@ from api.views import (
 )
 
 urlpatterns = [
-    path("start-simulation/<int:user_id>/", start_simulation, name="start_simulation"),
-    path("stop-simulation/<int:user_id>/", stop_simulation, name="stop_simulation"),
+    path("start-simulation/", start_simulation, name="start_simulation"),
+    path("stop-simulation/", stop_simulation, name="stop_simulation"),
     path(
-        "simulation-status/<int:user_id>/", simulation_status, name="simulation_status"
+        "simulation-status/", simulation_status, name="simulation_status"
     ),
     path(
         "glucose-readings/", GlucoseReadingList.as_view(), name="glucose-readings-list"

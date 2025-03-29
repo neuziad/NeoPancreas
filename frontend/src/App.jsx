@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard.jsx"
 import NotFound from "./pages/NotFound"
 import ProtectedRoute from "./components/ProtectedRoute.jsx"
 import { stopSimulation } from "./components/Simulations.jsx"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 function Logout() {
     stopSimulation()
@@ -20,27 +20,51 @@ function RegisterAndLogout() {
 }
 
 function App() {
+    const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
+    // Prvent navigation to blank page
     useEffect(() => {
         if (window.history.length <= 1)
             window.history.replaceState(null, "", "/")
     }, [])
 
+    // Update online/offline status
+    useEffect(() => {
+        const handleOnline = () => setIsOffline(false)
+        const handleOffline = () => setIsOffline(true)
+
+        window.addEventListener("online", handleOnline)
+        window.addEventListener("offline", handleOffline)
+
+        return () => {
+            window.removeEventListener("online", handleOnline)
+            window.removeEventListener("offline", handleOffline)
+        }
+    }, [])
+
     return (
         <BrowserRouter>
-            <Routes>
-                <Route
-                    path="/"
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<RegisterAndLogout />} />
-                <Route path="*" element={<NotFound />} />
-                <Route path="/logout" element={<Logout />} />
-            </Routes>
+            <div>
+                {isOffline && (
+                    <div className="bg-[#f4e0ff] text-black text-center py-2">
+                        You are offline. Using last saved glucose data.
+                    </div>
+                )}
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<RegisterAndLogout />} />
+                    <Route path="*" element={<NotFound />} />
+                    <Route path="/logout" element={<Logout />} />
+                </Routes>
+            </div>
         </BrowserRouter>
     )
 }
@@ -58,5 +82,18 @@ self.addEventListener("fetch", (event) => {
         })
     )
 })
+
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/service-worker.js")
+            .then((registration) =>
+                console.log("Service Worker registered:", registration)
+            )
+            .catch((error) =>
+                console.log("Service Worker registration failed:", error)
+            )
+    })
+}
 
 export default App

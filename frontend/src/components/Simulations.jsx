@@ -26,7 +26,7 @@ export async function startSimulation() {
 
     try {
         const response = await api.post(
-            `/api/start-simulation/${userId}/`,
+            `/api/start-simulation/`,
             null,
             {
                 headers: {
@@ -52,7 +52,7 @@ export async function stopSimulation() {
 
     try {
         const response = await api.post(
-            `/api/stop-simulation/${userId}/`,
+            `/api/stop-simulation/`,
             null,
             {
                 headers: {
@@ -77,7 +77,7 @@ export async function getSimulationStatus() {
     }
 
     try {
-        const response = await api.get(`/api/simulation-status/${userId}/`, {
+        const response = await api.get(`/api/simulation-status/`, {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
             },

@@ -116,7 +116,7 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                 </span>
                 <br />
                 <i>
-                    <span style={{ fontSize: "0.9rem", color: "#8F8F8F" }}>
+                    <span style={{ fontSize: "0.9rem", color: "#737373" }}>
                         (past 24 hours)
                     </span>
                 </i>

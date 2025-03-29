@@ -90,6 +90,9 @@ class GlucoseSerializer(serializers.ModelSerializer):
         fields = ["id", "timestamp", "reading", "trend", "patient"]
         extra_kwargs = {"patient": {"read_only": True}}
 
+    def create(self, validated_data):
+        return super().create(validated_data)
+
 
 class SensorSettingsSerializer(serializers.ModelSerializer):
     class Meta:

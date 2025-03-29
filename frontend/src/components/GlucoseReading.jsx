@@ -3,10 +3,8 @@ import PropTypes from "prop-types"
 import "../styles/GlucoseReading.css"
 
 const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
-    const [glucoseValue, setGlucoseValue] = useState(
-        data.length > 0 ? data[data.length - 1].glucose : 0.0
-    )
-    const [trend, setTrend] = useState("")
+    const [glucoseValue, setGlucoseValue] = useState("...")
+    const [trend, setTrend] = useState("NODATA")
 
     // When starting, retrieve latest glucose reading from local storage
     useEffect(() => {
@@ -41,10 +39,10 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
                 style={{ borderColor: borderColor }} // Apply dynamic border color
             >
                 <h1 className="glucose-value">
-                    {glucoseValue}{" "}
-                    {trend !== "NODATA" && (
-                        <span className="glucose-trend">{trend}</span>
-                    )}
+                    {glucoseValue === "..." ? "0" : glucoseValue}
+                    <span className="glucose-trend">
+                        {trend === "NODATA" ? "." : trend}
+                    </span>
                 </h1>
                 <p className="glucose-unit">mmol/L</p>
             </div>

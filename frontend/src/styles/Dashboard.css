@@ -9,27 +9,6 @@
     background-color: #fcfffe;
 }
 
-.current-glucose {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-.dash-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1;
-    background-color: #eac6eb;
-    justify-content: space-between;
-    padding: 0.7rem 0.7rem;
-    height: 2.6rem;
-}
-
 .header-icon {
     width: 3rem;
     height: 3rem;
@@ -37,15 +16,6 @@
     z-index: 100;
     cursor: pointer;
     position: relative;
-}
-
-.header-title {
-    flex-grow: 1;
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: black;
-    transform: translateY(-250%);
 }
 
 .hide-scrollbar::-webkit-scrollbar {

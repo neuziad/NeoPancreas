@@ -4,10 +4,11 @@ exports[`GlucoseChart correctly renders various chart aspects when data is avail
 <div
   class="w-screen relative"
   data-testid="scatter-chart"
+  style="min-height: 300px;"
 >
   <div
     class="recharts-responsive-container"
-    style="width: 100%; height: 440px; min-width: 0;"
+    style="width: 98%; height: 440px; min-width: 0;"
   />
 </div>
 `;

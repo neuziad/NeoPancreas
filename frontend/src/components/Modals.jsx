@@ -29,7 +29,13 @@ const BolusModal = ({
         if (emEnabled) bolusDose *= EXERCISE_MODE_MODIFIER
 
         bolusDose -= insulinOnBoard
-        return Math.max(0, Math.min(bolusDose, maxBolus)).toFixed(2)
+
+        bolusDose = Math.max(0, Math.min(bolusDose, maxBolus))
+
+        // Round to the nearest 0.05
+        bolusDose = Math.round(bolusDose / 0.05) * 0.05
+
+        return parseFloat(bolusDose.toFixed(2))
     }, [
         carbs,
         carbRatio,

@@ -44,7 +44,7 @@ describe("GlucoseChart", () => {
             />
         )
 
-        expect(screen.getByText(/Loading glucose data.../)).toBeInTheDocument()
+        expect(screen.getByText(/Loading data if available.../)).toBeInTheDocument()
     })
 
     it("correctly renders various chart aspects when data is available", async () => {
@@ -60,7 +60,7 @@ describe("GlucoseChart", () => {
         // Wait for the component to render and ensure no loading state
         await waitFor(() =>
             expect(
-                screen.queryByText(/Loading glucose data/i)
+                screen.queryByText(/Loading data if available.../i)
             ).not.toBeInTheDocument()
         )
 
