@@ -172,58 +172,87 @@ const Dashboard = () => {
         fetchUser()
     }, [fetchUser])
 
-    // WebSocket for real-time updates
+    // WebSocket for real-time updates with reconnection logic
     useEffect(() => {
-        const socket = new WebSocket(WEBSOCKET_URL)
+        if (!navigator.onLine) return  // No internet connection, no WebSocket connection
+        
+        let socket
+        let reconnectInterval
 
-        socket.onopen = () => console.log("✅ WebSocket Connected")
+        const connectWebSocket = () => {
+            socket = new WebSocket(WEBSOCKET_URL)
 
-        socket.onmessage = (event) => {
-            const newReading = JSON.parse(event.data)
-            console.log("📡 WebSocket Data:", newReading)
-
-            const formattedReading = {
-                timestamp: new Date().getHours() * 60 + new Date().getMinutes(),
-                glucose: parseFloat(newReading.glucose),
-                trend: newReading.trend || "NODATA",
-                bolus_injected: newReading.bolus_injected || 0,
-                basal_injected: newReading.basal_injected || 0,
+            socket.onopen = () => {
+                console.log("✅ WebSocket Connected")
+                
+                // Clear any existing reconnection attempts
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval)
+                    reconnectInterval = null
+                }
             }
 
-            // Append new glucose data (Real-time)
-            setGlucoseData((prev) => [...prev, formattedReading])
+            socket.onmessage = (event) => {
+                const newReading = JSON.parse(event.data)
+                console.log("📡 WebSocket Data:", newReading)
 
-            // Keep chartData updated (Filter old data)
-            setChartData((prev) => {
-                const updatedData = [...prev, formattedReading]
-                const cutoffTime =
-                    new Date().getTime() -
-                    selectedChartTimespan * 60 * 60 * 1000
-                const filteredData = updatedData.filter(
-                    (entry) => entry.timestamp * 60 * 1000 >= cutoffTime
-                )
-                return filteredData.length > 0 ? filteredData : updatedData
-            })
+                const formattedReading = {
+                    timestamp: new Date().getHours() * 60 + new Date().getMinutes(),
+                    glucose: parseFloat(newReading.glucose),
+                    trend: newReading.trend || "NODATA",
+                    bolus_injected: newReading.bolus_injected || 0,
+                    basal_injected: newReading.basal_injected || 0,
+                }
 
-            // Update profile-related attributes
-            fetchUserProfile()
+                // Append new glucose data (Real-time)
+                setGlucoseData((prev) => [...prev, formattedReading])
 
-            // Update data for time in range bar
-            setTimeInRangeData((prev) => {
-                const updatedData = [
-                    ...prev,
-                    {
-                        timestamp: formattedReading.timestamp,
-                        glucose: formattedReading.glucose,
-                    },
-                ]
-                return updatedData
-            })
+                // Keep chartData updated (Filter old data)
+                setChartData((prev) => {
+                    const updatedData = [...prev, formattedReading]
+                    const cutoffTime =
+                        new Date().getTime() -
+                        selectedChartTimespan * 60 * 60 * 1000
+                    const filteredData = updatedData.filter(
+                        (entry) => entry.timestamp * 60 * 1000 >= cutoffTime
+                    )
+                    return filteredData.length > 0 ? filteredData : updatedData
+                })
+
+                // Update profile-related attributes
+                fetchUserProfile()
+
+                // Update data for time in range bar
+                setTimeInRangeData((prev) => {
+                    const updatedData = [
+                        ...prev,
+                        {
+                            timestamp: formattedReading.timestamp,
+                            glucose: formattedReading.glucose,
+                        },
+                    ]
+                    return updatedData
+                })
+            }
+
+            socket.onerror = (error) => console.error("❌ WebSocket Error:", error)
+
+            socket.onclose = () => {
+                console.log("❌ WebSocket Disconnected, attempting to reconnect...")
+                
+                // Attempt reconnection every 5 seconds
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(connectWebSocket, 5000)
+                }
+            }
         }
 
-        socket.onerror = (error) => console.error("❌ WebSocket Error:", error)
+        connectWebSocket()
 
-        return () => socket.close()
+        return () => {
+            if (socket) socket.close()
+            if (reconnectInterval) clearInterval(reconnectInterval)
+        }
     }, [fetchUserProfile, selectedChartTimespan])
 
     if (!userProfile) return <h1>Loading dashboard...</h1>

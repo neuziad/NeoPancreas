@@ -25,3 +25,12 @@ jest.mock("react-router-dom", () => ({
     ...jest.requireActual("react-router-dom"),
     useNavigate: jest.fn(() => jest.fn()),
 }))
+
+// Ensure Notification API is available globally
+globalThis.Notification = jest.fn().mockImplementation((title, options) => ({
+    title,
+    options,
+}))
+
+// Properly mock Notification.requestPermission
+globalThis.Notification.requestPermission = jest.fn().mockResolvedValue("granted")

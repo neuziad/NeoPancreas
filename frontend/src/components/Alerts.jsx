@@ -67,6 +67,28 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
     const [wasHighBefore, setWasHighBefore] = useState(false)
     const [wasLowBefore, setWasLowBefore] = useState(false)
 
+    // Handling push notifications
+    useEffect(() => {
+        if (!alertType) return
+    
+        // Ensure browser has permission
+        if (Notification.permission === "granted") {
+            new Notification(alertMessages[alertType].text, {
+                body: "Check your glucose levels now!",
+                icon: alertMessages[alertType].icon,
+            })
+        } else {
+            Notification.requestPermission().then((permission) => {
+                if (permission === "granted") {
+                    new Notification(alertMessages[alertType].text, {
+                        body: "Check your glucose levels now!",
+                        icon: alertMessages[alertType].icon,
+                    })
+                }
+            })
+        }
+    }, [alertType])
+
     useEffect(() => {
         const latestGlucose = glucoseData[glucoseData.length - 1] || 0
         const recentZeros = glucoseData.slice(-5).filter((g) => g === 0).length
@@ -89,7 +111,16 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
             setWasHighBefore(false)
             setWasLowBefore(false)
         }
-    }, [glucoseData, glucoseMin, glucoseMax, wasHighBefore, wasLowBefore])
+
+        // Send push notification
+        if (alertType && Notification.permission === "granted") {
+            new Notification(alertMessages[alertType].text, {
+                body: "Check your glucose levels now!",
+                icon: alertMessages[alertType].icon,
+            })
+        }
+        
+    }, [glucoseData, glucoseMin, glucoseMax, wasHighBefore, wasLowBefore, alertType])
 
     if (!alertType) return null
 

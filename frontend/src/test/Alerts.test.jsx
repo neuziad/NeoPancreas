@@ -1,8 +1,13 @@
 import { render, screen, fireEvent } from "@testing-library/react"
 import AlertMonitor from "../components/Alerts"
-import { describe, it, expect } from "@jest/globals"
+import { describe, it, expect, jest, beforeEach } from "@jest/globals"
 
 describe("Alerts Component", () => {
+    
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
     it("should not render AlertModal when no alert type is triggered", () => {
         render(
             <AlertMonitor glucoseData={[]} glucoseMin={3.9} glucoseMax={11.2} />
@@ -92,5 +97,43 @@ describe("Alerts Component", () => {
         // No high or low glucose alerts should be shown
         expect(screen.queryByText("Urgent high blood glucose")).toBeNull()
         expect(screen.queryByText("Urgent low blood glucose")).toBeNull()
+    })
+
+    it("should trigger a push notification when an alert is shown", async () => {
+        const glucoseData = [12.5] // High glucose level
+        render(
+            <AlertMonitor
+                glucoseData={glucoseData}
+                glucoseMin={3.9}
+                glucoseMax={11.2}
+            />
+        )
+
+        // Wait for effect to trigger
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        // Ensure a notification was triggered
+        expect(globalThis.Notification).toHaveBeenCalledTimes(1)
+        expect(globalThis.Notification).toHaveBeenCalledWith(
+            "Urgent high blood glucose",
+            {
+                body: "Check your glucose levels now!",
+                icon: "/urgenthigh.svg",
+            }
+        )
+    })
+
+    it("should not trigger a push notification when glucose is normal", () => {
+        const glucoseData = [5.0, 6.0, 6.5] // Normal glucose levels
+        render(
+            <AlertMonitor
+                glucoseData={glucoseData}
+                glucoseMin={3.9}
+                glucoseMax={11.2}
+            />
+        )
+
+        // Ensure no notifications were triggered
+        expect(globalThis.Notification).not.toHaveBeenCalled()
     })
 })
