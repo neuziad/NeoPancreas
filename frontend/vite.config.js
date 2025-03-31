@@ -7,7 +7,7 @@ import { VitePWA } from "vite-plugin-pwa"
 // https://vite.dev/config/
 export default defineConfig({
     minify: "esbuild", // Minify code
-    tersetOptions: {
+    terserOptions: {
         compress: {
             drop_console: true, // Remove console log for increased performance
             unused: true, // Remove unused code for increased performance
