@@ -12,6 +12,7 @@ function ProtectedRoute({ children }) {
         const auth = async () => {
             const token = localStorage.getItem(ACCESS_TOKEN)
             if (!token) {
+                console.log("❌ No access token found")
                 setIsAuthorized(false)
                 return
             }
@@ -29,8 +30,14 @@ function ProtectedRoute({ children }) {
             console.log(`⏳ Token Expiration: ${tokenExpiration}, Now: ${now}`)
 
             if (tokenExpiration < now) {
-                console.log("🟢 Token expired! Calling refreshToken()...")
-                await refreshToken()
+                console.log("🟢 Token expired! Checking refresh options...")
+
+                if (navigator.onLine) {
+                    await refreshToken()
+                } else {
+                    console.log("🌐 Offline: Allowing limited access")
+                    setIsAuthorized(true) // Allow offline mode
+                }
             } else {
                 console.log("✅ Token still valid")
                 setIsAuthorized(true)
@@ -49,6 +56,12 @@ function ProtectedRoute({ children }) {
         if (!refreshToken) {
             console.log("❌ No refresh token found")
             setIsAuthorized(false)
+            return
+        }
+
+        if (!navigator.onLine) {
+            console.log("🌐 Offline: Cannot refresh token")
+            setIsAuthorized(true) // Allow offline mode if refresh isn't available
             return
         }
 

@@ -25,15 +25,11 @@ export async function startSimulation() {
     }
 
     try {
-        const response = await api.post(
-            `/api/start-simulation/`,
-            null,
-            {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
-                },
-            }
-        )
+        const response = await api.post(`/api/start-simulation/`, null, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
+            },
+        })
         console.log("Simulation started:", response.data)
         return true
     } catch (error) {
@@ -51,15 +47,11 @@ export async function stopSimulation() {
     }
 
     try {
-        const response = await api.post(
-            `/api/stop-simulation/`,
-            null,
-            {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
-                },
-            }
-        )
+        const response = await api.post(`/api/stop-simulation/`, null, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem(ACCESS_TOKEN)}`,
+            },
+        })
         console.log("Simulation stopped:", response.data)
         return true
     } catch (error) {

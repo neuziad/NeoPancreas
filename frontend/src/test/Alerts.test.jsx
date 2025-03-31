@@ -3,7 +3,6 @@ import AlertMonitor from "../components/Alerts"
 import { describe, it, expect, jest, beforeEach } from "@jest/globals"
 
 describe("Alerts Component", () => {
-    
     beforeEach(() => {
         jest.clearAllMocks()
     })

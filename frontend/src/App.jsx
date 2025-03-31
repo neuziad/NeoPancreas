@@ -46,8 +46,13 @@ function App() {
         <BrowserRouter>
             <div>
                 {isOffline && (
-                    <div className="bg-[#f4e0ff] text-black text-center py-2">
-                        You are offline. Using last saved glucose data.
+                    <div
+                        className="bg-[#613a9d] text-white text-center py-4 fixed bottom-0 left-0 right-0 z-44"
+                        style={{ zIndex: 44 }}
+                    >
+                        🌐 <b>OFFLINE MODE</b>: You are currently offline. Using
+                        last saved glucose data. Certain functionality may be
+                        broken as a result of no connection.
                     </div>
                 )}
                 <Routes>

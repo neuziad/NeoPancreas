@@ -24,6 +24,7 @@ User = get_user_model()
 
 EXERCISE_MODE_MODIFIER = Decimal("0.25")  # Exercise mode multiplier macro
 
+
 # Create a reading and apply the necessary insulin
 @shared_task
 def create_reading(*args):

@@ -33,4 +33,6 @@ globalThis.Notification = jest.fn().mockImplementation((title, options) => ({
 }))
 
 // Properly mock Notification.requestPermission
-globalThis.Notification.requestPermission = jest.fn().mockResolvedValue("granted")
+globalThis.Notification.requestPermission = jest
+    .fn()
+    .mockResolvedValue("granted")

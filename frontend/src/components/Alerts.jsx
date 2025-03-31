@@ -70,7 +70,7 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
     // Handling push notifications
     useEffect(() => {
         if (!alertType) return
-    
+
         // Ensure browser has permission
         if (Notification.permission === "granted") {
             new Notification(alertMessages[alertType].text, {
@@ -119,8 +119,14 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
                 icon: alertMessages[alertType].icon,
             })
         }
-        
-    }, [glucoseData, glucoseMin, glucoseMax, wasHighBefore, wasLowBefore, alertType])
+    }, [
+        glucoseData,
+        glucoseMin,
+        glucoseMax,
+        wasHighBefore,
+        wasLowBefore,
+        alertType,
+    ])
 
     if (!alertType) return null
 

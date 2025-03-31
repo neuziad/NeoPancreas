@@ -44,7 +44,9 @@ describe("GlucoseChart", () => {
             />
         )
 
-        expect(screen.getByText(/Loading data if available.../)).toBeInTheDocument()
+        expect(
+            screen.getByText(/Loading data if available.../)
+        ).toBeInTheDocument()
     })
 
     it("correctly renders various chart aspects when data is available", async () => {

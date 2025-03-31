@@ -4,28 +4,31 @@ import mkcert from "vite-plugin-mkcert"
 import tailwindcss from "@tailwindcss/vite"
 import { VitePWA } from "vite-plugin-pwa"
 
-
 // https://vite.dev/config/
 export default defineConfig({
     minify: "esbuild", // Minify code
     tersetOptions: {
         compress: {
-            drop_console: true,  // Remove console log for increased performance
-            unused: true  // Remove unused code for increased performance
-        }
+            drop_console: true, // Remove console log for increased performance
+            unused: true, // Remove unused code for increased performance
+        },
     },
     chunkSizeWarningLimit: 4000,
-    plugins: [react(), 
-        mkcert(), 
-        tailwindcss(), 
+    plugins: [
+        react(),
+        mkcert(),
+        tailwindcss(),
         VitePWA({
             registerType: "prompt",
             injectRegister: "auto",
-            includeAssets: ["/favicon.ico", "/apple-icon-180.png", "/manifest-icon-192.png", "manifest.webmanifest"],
+            includeAssets: [
+                "**/*", // Cache all assets in the public folder
+            ],
             manifest: {
                 name: "NeoPancreas",
                 short_name: "NeoPancreas",
-                description: "A web-based artificial pancreas system for diabetic patients.",
+                description:
+                    "A web-based artificial pancreas system for diabetic patients.",
                 start_url: "/",
                 display: "standalone",
                 background_color: "#fcfffe",
@@ -63,15 +66,15 @@ export default defineConfig({
                         src: "/screenshot.png",
                         sizes: "1920x945",
                         type: "image/png",
-                        form_factor: "wide"
+                        form_factor: "wide",
                     },
                     {
                         src: "/screenshot_m.png",
                         sizes: "425x858",
                         type: "image/png",
-                        form_factor: "narrow"
-                    }
-                ]
+                        form_factor: "narrow",
+                    },
+                ],
             },
             workbox: {
                 navigateFallback: "/index.html",

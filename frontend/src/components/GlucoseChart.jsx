@@ -13,7 +13,11 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
     const startTime = Math.max(0, nowInMinutes - timeScale * 60)
     return (
         // Addition of min-height to reduce large layout shifts
-        <div data-testid="scatter-chart" style={{ minHeight: "300px" }} className="w-screen relative">
+        <div
+            data-testid="scatter-chart"
+            style={{ minHeight: "300px" }}
+            className="w-screen relative"
+        >
             {/* Chart */}
             {chartData.length > 0 ? (
                 <ResponsiveContainer width="98%" height={440}>
