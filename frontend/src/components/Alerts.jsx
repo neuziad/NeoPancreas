@@ -72,22 +72,22 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
     const [wasHighBefore, setWasHighBefore] = useState(false)
     const [wasLowBefore, setWasLowBefore] = useState(false)
 
-    // Handling push notifications
+    // Request notification permission on mount
     useEffect(() => {
-        if (!alertType) return
-
-        // Ensure browser has permission
         if (Notification.permission !== "granted") {
-            Notification.requestPermission().then((permission) => {
-                if (permission === "granted") {
-                    new Notification(alertMessages[alertType].text, {
-                        body: "Check your glucose levels now!",
-                        icon: alertMessages[alertType].icon,
-                    })
-                }
+            Notification.requestPermission()
+        }
+    }, [])
+
+    // Function to send notifications
+    const sendNotification = (type) => {
+        if (Notification.permission === "granted") {
+            new Notification(alertMessages[type].text, {
+                body: "Check your glucose levels now!",
+                icon: alertMessages[type].icon,
             })
         }
-    }, [alertType])
+    }
 
     useEffect(() => {
         const latestGlucose =
@@ -99,6 +99,7 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
         if (latestGlucose > glucoseMax && !wasHighBefore) {
             setAlertType("high")
             setWasHighBefore(true)
+            sendNotification("high")
         } else if (
             latestGlucose < glucoseMin &&
             latestGlucose > 0 &&
@@ -106,22 +107,16 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
         ) {
             setAlertType("low")
             setWasLowBefore(true)
+            sendNotification("low")
         } else if (recentZeros >= 3) {
             setAlertType("connection")
+            sendNotification("connection")
         }
 
         if (latestGlucose <= glucoseMax && latestGlucose >= glucoseMin) {
             setWasHighBefore(false)
             setWasLowBefore(false)
             setAlertType(null)
-        }
-
-        // Send push notification
-        if (alertType && Notification.permission === "granted") {
-            new Notification(alertMessages[alertType].text, {
-                body: "Check your glucose levels now!",
-                icon: alertMessages[alertType].icon,
-            })
         }
     }, [
         glucoseData,
