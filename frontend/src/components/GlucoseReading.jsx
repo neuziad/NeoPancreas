@@ -6,7 +6,7 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
     const [glucoseValue, setGlucoseValue] = useState("...")
     const [trend, setTrend] = useState("NODATA")
 
-    // When starting, retrieve latest glucose reading from local storage
+    // When starting, retrieve latest historical data from API
     useEffect(() => {
         if (startData) {
             setGlucoseValue(parseFloat(startData.glucose).toFixed(1))
@@ -14,7 +14,7 @@ const GlucoseReading = ({ data, startData, glucoseMin, glucoseMax }) => {
         }
     }, [startData])
 
-    // Update glucose value when new data comes in
+    // Update glucose value when new data comes in from WebSocket
     useEffect(() => {
         if (data.length > 0) {
             const latestReading = data[data.length - 1]

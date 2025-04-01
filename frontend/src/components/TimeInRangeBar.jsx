@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 
-const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
+const TimeInRangeBar = ({ data, glucoseMin, glucoseMax }) => {
     const totalEntries = data.length
     const lowCount = data.filter((entry) => entry.glucose < glucoseMin).length
     const inRangeCount = data.filter(

@@ -47,7 +47,8 @@ const BasalAndBolus = ({
                 className={`exercise-mode ${localEmEnabled ? "enabled" : "disabled"}`}
                 onClick={toggleExerciseMode}
             >
-                <span>Exercise mode?</span> <strong>{localEmEnabled ? "ON" : "OFF"}</strong>
+                <span>Exercise mode?</span>{" "}
+                <strong>{localEmEnabled ? "ON" : "OFF"}</strong>
             </button>
 
             <div className="insulin-sections">

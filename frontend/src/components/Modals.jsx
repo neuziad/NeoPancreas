@@ -79,7 +79,10 @@ const BolusModal = ({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center modal-overlay" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
+        <div
+            className="fixed inset-0 flex items-center justify-center modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#BCD4EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -218,7 +221,10 @@ const SensorModal = ({
     }
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
+        <div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#F5E1C8] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -388,7 +394,10 @@ const PumpModal = ({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
+        <div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#EAC7EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -622,6 +631,7 @@ BolusModal.propTypes = {
     glucoseMin: PropTypes.number.isRequired,
     insulinOnBoard: PropTypes.number.isRequired,
     maxBolus: PropTypes.number.isRequired,
+    maxIOB: PropTypes.number.isRequired,
 }
 
 SensorModal.propTypes = {

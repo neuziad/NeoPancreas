@@ -412,6 +412,15 @@ const Dashboard = () => {
                     Dashboard
                 </h1>
 
+                {/* Logout button */}
+                <a href="/logout" className="hidden sm:block">
+                    <img
+                        src="/logout.svg"
+                        className="absolute right-0 top-0 bottom-0 my-auto mr-4 w-6 h-6 cursor-pointer"
+                        alt="Logout"
+                    />
+                </a>
+
                 {isMenuOpen && (
                     <div className="absolute top-[3.5rem] left-0 right-0 bg-[#eac6eb] shadow-lg flex flex-col items-center py-2">
                         <button
@@ -442,6 +451,16 @@ const Dashboard = () => {
                             />
                             Pump Settings
                         </button>
+                        <a href="/logout">
+                            <button className="py-2 px-4 w-full text-left">
+                                <img
+                                    src="/logout.svg"
+                                    className="w-6 h-6 inline-block mr-2"
+                                    alt="Logout"
+                                />
+                                Logout
+                            </button>
+                        </a>
                     </div>
                 )}
             </div>
@@ -496,6 +515,7 @@ const Dashboard = () => {
                 glucoseMin={userProfile.glucoseMin}
                 insulinOnBoard={userProfile.iob}
                 maxBolus={userProfile.bolusMax}
+                maxIOB={userProfile.maxIOB}
                 setIsBolusOpen={() => setIsBolusOpen(false)}
             />
 
