@@ -9,7 +9,7 @@ testing to make sure we get the result we want, as directly testing divs here wo
 import { toMatchImageSnapshot } from "jest-image-snapshot"
 expect.extend({ toMatchImageSnapshot })
 
-describe("GlucoseChart", () => {
+describe("GlucoseChart Component", () => {
     const chartData = [
         { timestamp: 0, glucose: 5.2 },
         { timestamp: 60, glucose: 6.3 },

@@ -16,7 +16,16 @@ describe("Alerts Component", () => {
     })
 
     it("should render AlertModal when glucose level is high (greater than 11.2 mmol/L)", () => {
-        const glucoseData = [11.0, 12.5, 14.8] // High glucose levels in mmol/L
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 12.5, // High glucose levels in mmol/L
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}
@@ -33,7 +42,16 @@ describe("Alerts Component", () => {
     })
 
     it("should render AlertModal when glucose level is low (less than 3.9 mmol/L)", () => {
-        const glucoseData = [3.5, 3.2, 3.0] // Low glucose levels in mmol/L
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 3.2, // Low glucose levels in mmol/L
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}
@@ -65,7 +83,16 @@ describe("Alerts Component", () => {
     })
 
     it('should stop the alarm when clicking the "Stop Alarm" button', () => {
-        const glucoseData = [12.0] // High glucose data
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 12.5, // High glucose levels in mmol/L
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}
@@ -84,7 +111,16 @@ describe("Alerts Component", () => {
     })
 
     it("should not show alerts for glucose within the acceptable range (3.9 - 11.2 mmol/L)", () => {
-        const glucoseData = [5.0, 6.0, 6.5] // Normal glucose range in mmol/L
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 7.6, // Glucose in range
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}
@@ -99,7 +135,16 @@ describe("Alerts Component", () => {
     })
 
     it("should trigger a push notification when an alert is shown", async () => {
-        const glucoseData = [12.5] // High glucose level
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 12.5, // High glucose levels in mmol/L
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}
@@ -123,7 +168,16 @@ describe("Alerts Component", () => {
     })
 
     it("should not trigger a push notification when glucose is normal", () => {
-        const glucoseData = [5.0, 6.0, 6.5] // Normal glucose levels
+        const glucoseData = [
+            {
+                timestamp: 105,
+                glucose: 5.9, // Glucose in range
+                trend: "NODATA",
+                bolus_injected: 0,
+                basal_injected: 0,
+            },
+        ]
+
         render(
             <AlertMonitor
                 glucoseData={glucoseData}

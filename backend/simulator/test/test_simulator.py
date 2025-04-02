@@ -150,25 +150,3 @@ class SimulatorTests(TestCase):
 
         # Check if the error was logged
         mock_logger.error.assert_called_with("User with ID 9999 not found.")
-
-    # def test_bolus_injection_is_called_correctly(self):
-    #     """
-    #     Test that when the global _is_bolus_called is set to True and _carbs_on_board is 50,
-    #     create_reading uses titrate_bolus(50) to set bolus_injected in the next glucose reading.
-    #     """
-
-    #     create_reading(self.user.id)
-
-    #     # Retrieve the latest reading for this profile
-    #     latest_reading = GlucoseReading.objects.filter(patient=self.profile).last()
-    #     self.assertIsNotNone(latest_reading, "No glucose reading was created.")
-
-    #     create_reading(self.user.id)
-
-    #     # Retrieve the next reading for this profile
-    #     next_reading = GlucoseReading.objects.filter(patient=self.profile).last()
-    #     self.assertIsNotNone(next_reading, "No glucose reading was created.")
-
-    #     # Bolus output may vary depending on the blood glucose reading, so we will just check
-    #     # if bolus was given at all, as getting the exact number every time is impossible
-    #     self.assertIsNot(next_reading.bolus_injected, 0)

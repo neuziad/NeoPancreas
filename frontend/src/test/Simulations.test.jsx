@@ -14,7 +14,7 @@ import "jest-localstorage-mock"
 jest.mock("jwt-decode")
 jest.mock("../api")
 
-describe("Simulation Functions", () => {
+describe("Simulation Functions Component", () => {
     const mockToken =
         "Yf5zfjwkdPs1AroQise4Omm1ajOiciGgI9K1AcAeI0EyudtVDYTB7sZGQhAM58xB"
     const mockUserId = "64"

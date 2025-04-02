@@ -11,7 +11,7 @@ import "jest-localstorage-mock"
 jest.mock("../api")
 jest.mock("jwt-decode")
 
-describe("Protected Routes", () => {
+describe("ProtectedRoute Component", () => {
     beforeEach(() => {
         jest.clearAllMocks()
         localStorage.clear()
@@ -54,7 +54,7 @@ describe("Protected Routes", () => {
         })
     })
 
-    it("should refresh token if expired and successfully authorize", async () => {
+    it("should refresh token if expired and successfully authorise", async () => {
         // Invalid expired token
         jwtDecode.mockReturnValueOnce({
             exp: Math.floor(Date.now() / 1000) - 3600,
@@ -82,7 +82,7 @@ describe("Protected Routes", () => {
         })
     })
 
-    it("should show loading state while checking authorization", async () => {
+    it("should show loading state while checking authorisation", async () => {
         // Valid unexpired token
         jwtDecode.mockReturnValueOnce({
             exp: Math.floor(Date.now() / 1000) + 3600,

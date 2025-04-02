@@ -52,7 +52,7 @@ describe("BasalAndBolus Component", () => {
         expect(screen.getByText("U/hr")).toBeInTheDocument()
     })
 
-    it("exercise mode toggle updates UI", async () => {
+    it("should update UI when exercise mode toggled", async () => {
         // Mock the axios GET request for toggling exercise mode
         axios.get.mockResolvedValue({ status: 200 })
 
@@ -69,7 +69,7 @@ describe("BasalAndBolus Component", () => {
         })
     })
 
-    it("clicking bolus section triggers onOpenBolus function", () => {
+    it("should trigger bolus modal when bolus button is clicked", () => {
         render(<BasalAndBolus {...props} />)
 
         const bolusSection = screen
