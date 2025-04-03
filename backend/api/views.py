@@ -111,10 +111,6 @@ class SensorSettingsView(generics.UpdateAPIView):
         return self.request.user.profile
 
     def patch(self, request, *args, **kwargs):
-        print("📩 Received PATCH request for sensor settings!")
-        print("Headers:", dict(request.headers))
-        print("Body:", request.data)
-
         return super().patch(request, *args, **kwargs)
 
 
@@ -127,26 +123,17 @@ class PumpSettingsView(generics.UpdateAPIView):
         return self.request.user.profile
 
     def patch(self, request, *args, **kwargs):
-        print("📩 Received PATCH request for pump settings!")
-        print("Headers:", dict(request.headers))
-        print("Body:", request.data)
-
         return super().patch(request, *args, **kwargs)
 
 
 @api_view(["POST"])
-def start_simulation(request, user_id):
+def start_simulation(request):
     """
     Begins the glucose simulation for the authenticated user.
     """
-    # Get authenticated user from token
-    user_from_token = request.user
+    user = request.user
 
-    # Ensure the user ID in the URL matches the authenticated user
-    if user_from_token.id != user_id:
-        return JsonResponse({"message": "Invalid user ID"}, status=403)
-
-    task_name = f"user-reading-task-{user_id}"
+    task_name = f"user-reading-task-{user.id}"
 
     # Check if the periodic task already exists
     if PeriodicTask.objects.filter(name=task_name).exists():
@@ -166,28 +153,20 @@ def start_simulation(request, user_id):
         crontab=schedule,
         name=task_name,
         task="simulator.tasks.create_reading",
-        args=json.dumps([user_id]),  # Pass user_id correctly to Celery task
+        args=json.dumps([user.id]),  # Pass user_id correctly to Celery task
     )
 
     return JsonResponse(
-        {"message": f"Simulation started for user {user_id}"}, status=200
+        {"message": f"Simulation started for user {user.id}"}, status=200
     )
 
 
 @api_view(["POST"])
-def stop_simulation(request, user_id):
+def stop_simulation(request):
     """
     Stops the glucose simulation for the authenticated user.
     """
-    # Verify user authentication
-    user = None
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({"message": "Invalid user ID"}, status=401)
-
-    if not request.user.is_authenticated or request.user.id != user.id:
-        return JsonResponse({"message": "Invalid user ID"}, status=401)
+    user = request.user
 
     task_name = f"user-reading-task-{user.id}"
 
@@ -201,51 +180,16 @@ def stop_simulation(request, user_id):
 
 
 @api_view(["GET"])
-def simulation_status(request, user_id):
+def simulation_status(request):
     """
     Checks if the glucose simulation is currently running for the authenticated user.
     """
-    # Verify user authentication
-    user = None
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({"message": "Invalid user ID"}, status=401)
-
-    if not request.user.is_authenticated or request.user.id != user.id:
-        return JsonResponse({"message": "Invalid user ID"}, status=401)
+    user = request.user
 
     task_name = f"user-reading-task-{user.id}"
 
     is_running = PeriodicTask.objects.filter(name=task_name).exists()
     return JsonResponse({"running": is_running})
-
-
-@api_view(["GET"])
-def get_glucose_readings(request):
-    """Fetch glucose readings for the logged-in user within a time range"""
-    user = request.user
-    timespan = int(request.GET.get("timespan", 4))
-    start_time = now() - timedelta(hours=timespan)
-
-    # Retrieve readings from the database, including trend and insulin data
-    readings = GlucoseReading.objects.filter(
-        user=user, timestamp__gte=start_time
-    ).order_by("timestamp")
-
-    # Format the data to include trend, bolus, and basal data
-    data = [
-        {
-            "timestamp": r.timestamp.strftime("%H:%M"),
-            "glucose": r.value,
-            "trend": r.trend,
-            "bolus_injected": r.bolus_injected or 0,
-            "basal_injected": r.basal_injected or 0,
-        }
-        for r in readings
-    ]
-
-    return Response(data)
 
 
 @api_view(["GET"])

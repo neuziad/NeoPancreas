@@ -36,7 +36,7 @@ describe("GlucoseReading Component", () => {
         expect(glucoseUnitElement).toBeInTheDocument()
     })
 
-    it("displays correct border color for glucose value within normal range", () => {
+    it("displays correct border colour for glucose value within normal range", () => {
         render(
             <GlucoseReading
                 data={mockData}
@@ -50,7 +50,7 @@ describe("GlucoseReading Component", () => {
         expect(glucoseCircle).toHaveStyle("border-color: #3AA246") // Green for normal range
     })
 
-    it("displays correct border color for low glucose value", () => {
+    it("displays correct border colour for low glucose value", () => {
         const lowData = [{ glucose: 3.5, trend: "↓" }]
         render(
             <GlucoseReading
@@ -65,7 +65,7 @@ describe("GlucoseReading Component", () => {
         expect(glucoseCircle).toHaveStyle("border-color: #B53A3A") // Red for low range
     })
 
-    it("displays correct border color for high glucose value", () => {
+    it("displays correct border colour for high glucose value", () => {
         const highData = [{ glucose: 12.0, trend: "↑" }]
         render(
             <GlucoseReading
@@ -80,7 +80,7 @@ describe("GlucoseReading Component", () => {
         expect(glucoseCircle).toHaveStyle("border-color: #CBA63F") // Yellow for high range
     })
 
-    it("displays grey border color for zero glucose value", () => {
+    it("displays grey border colour for zero glucose value", () => {
         const noReadingsYet = {}
 
         const zeroData = {

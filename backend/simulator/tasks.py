@@ -22,6 +22,8 @@ getcontext().prec = 3
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+EXERCISE_MODE_MODIFIER = Decimal("0.25")  # Exercise mode multiplier macro
+
 
 # Create a reading and apply the necessary insulin
 @shared_task
@@ -76,7 +78,7 @@ def create_reading(*args):
         current_time = timezone.now()
         block_start = current_time.replace(second=0, microsecond=0)
 
-        # Round down to the nearest 5-minute mark:
+        # Round down to the nearest 5-minute mark
         block_start = block_start - timedelta(minutes=(block_start.minute % 5))
 
         # Look for an existing reading in the last 24 hours with the same hour and minute as block_start
@@ -106,7 +108,7 @@ def create_reading(*args):
         # Generate insulin doses
         basal_dose = user.profile.titrate_basal()
         if user.profile.em_enabled:
-            basal_dose *= Decimal("0.75")
+            basal_dose *= EXERCISE_MODE_MODIFIER
 
         new_reading.basal_injected = Decimal(str(basal_dose))
         new_reading.bolus_injected = Decimal(str(user.profile.pending_bolus))
@@ -124,7 +126,7 @@ def create_reading(*args):
         # Update WebSocket on new reading data
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "group_glucose_updates",  # This should match the group name in your consumer
+            "group_glucose_updates",
             {
                 "type": "send_glucose_update",
                 "data": {

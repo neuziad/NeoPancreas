@@ -28,6 +28,18 @@ class RegisterUserViewTest(TestCase):
         response = self.client.post("/api/user/register/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(username="newuser").exists())
+    
+    def test_invalid_register_user(self):
+        """Ensure user registration fails with invalid data."""
+        data = {
+            "username": "newuser",
+            "password": "testpassword",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "newuser@example.com",
+        }
+        response = self.client.post("/api/user/register/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class SimulationViewTest(TestCase):
@@ -47,7 +59,6 @@ class SimulationViewTest(TestCase):
             carb_ratio=10.0,
             insulin_duration=240,
             iob=0.0,
-            cob=0.0,
             max_iob=25.0,
             em_enabled=False,
         )
@@ -62,39 +73,32 @@ class SimulationViewTest(TestCase):
         self.assertFalse(PeriodicTask.objects.filter(name=task_name).exists())
 
         # Step 1: Start simulation
-        start_response = self.client.post(f"/api/start-simulation/{self.user.id}/")
+        start_response = self.client.post(f"/api/start-simulation/")
         self.assertEqual(start_response.status_code, 200, "Failed to start simulation")
         self.assertTrue(PeriodicTask.objects.filter(name=task_name).exists())
 
         # Step 2: Check simulation status (should be running)
-        status_response = self.client.get(f"/api/simulation-status/{self.user.id}/")
+        status_response = self.client.get(f"/api/simulation-status/")
         self.assertEqual(status_response.status_code, 200)
         self.assertTrue(
             status_response.json()["running"], "Simulation should be running"
         )
 
         # Step 3: Stop simulation
-        stop_response = self.client.post(f"/api/stop-simulation/{self.user.id}/")
+        stop_response = self.client.post(f"/api/stop-simulation/")
         self.assertEqual(stop_response.status_code, 200, "Failed to stop simulation")
         self.assertFalse(PeriodicTask.objects.filter(name=task_name).exists())
 
         # Step 4: Recheck simulation status (should be stopped)
-        status_response = self.client.get(f"/api/simulation-status/{self.user.id}/")
+        status_response = self.client.get(f"/api/simulation-status/")
         self.assertEqual(status_response.status_code, 200)
         self.assertFalse(
             status_response.json()["running"], "Simulation should be stopped"
         )
 
-    def test_start_simulation_with_invalid_user(self):
-        """Ensure simulation start fails with incorrect user ID"""
-        response = self.client.post(
-            "/api/start-simulation/99924624624699/"
-        )  # Non-existent user
-        self.assertEqual(response.status_code, 403)
-
     def test_stop_simulation_with_no_task(self):
         """Ensure stopping simulation fails when no task exists"""
-        response = self.client.post(f"/api/stop-simulation/{self.user.id}/")
+        response = self.client.post(f"/api/stop-simulation/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["message"], "No simulation found")
 

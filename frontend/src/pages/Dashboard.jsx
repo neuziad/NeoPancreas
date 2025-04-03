@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import axios from "axios"
 import TimeInRangeBar from "../components/TimeInRangeBar"
 import GlucoseChart from "../components/GlucoseChart"
-import { ACCESS_TOKEN } from "../constants"
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants"
 import "../styles/Dashboard.css"
 import BasalAndBolus from "../components/BasalAndBolus"
 import GlucoseReading from "../components/GlucoseReading"
@@ -18,6 +18,15 @@ import {
     FooterModals,
 } from "../components/Modals"
 import AlertMonitor from "../components/Alerts"
+import {
+    cacheGlucoseReading,
+    retrieveCacheReadings,
+    retrieveUserInfo,
+    cacheUserProfile,
+    cacheUserInfo,
+    retrieveUserProfile,
+} from "../components/UseCache"
+import db from "../db"
 
 const WEBSOCKET_URL =
     import.meta.env.VITE_WEBSOCKET_URL || "ws://localhost:8001/ws/glucose/"
@@ -35,7 +44,10 @@ const Dashboard = () => {
     const [isPumpOpen, setIsPumpOpen] = useState(false)
     const [isBolusOpen, setIsBolusOpen] = useState(false)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const lastFetchedTimespan = useRef(null) // Use reference in order to stop recursive API calls
     let carbs = 0
+
+    const fallbackData = retrieveCacheReadings()
 
     // Fetch status of simulation
     useEffect(() => {
@@ -43,17 +55,92 @@ const Dashboard = () => {
         status.then((res) => setIsRunning(res))
     }, [])
 
-    // API fetching user profile attributes
-    const fetchUserProfile = async () => {
+    // Fetch user full name (we must retrieve from User as opposed to UserProfile)
+    const fetchUser = useCallback(async () => {
         try {
             const token = localStorage.getItem(ACCESS_TOKEN)
             const res = await axios.get(
-                `${import.meta.env.VITE_API_URL}/api/user-profile/`,
+                `${import.meta.env.VITE_API_URL}/api/user/`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             )
-            setUserProfile({
+            setCurrentUser(res.data)
+
+            cacheUserInfo({
+                id: res.data.id,
+                access_token: token,
+                refresh_token: localStorage.getItem(REFRESH_TOKEN),
+                expiry: res.data.expiry,
+                first_name: res.data.first_name,
+                last_name: res.data.last_name,
+            })
+
+            return res.data.id
+        } catch (error) {
+            console.error("❌ Error fetching user:", error)
+
+            // Triggers cache loading when offline
+            if (!navigator.onLine) {
+                const cachedUserProfile = await retrieveUserProfile() // Fetch cached profile from IndexedDB
+                const cachedUserInfo = await retrieveUserInfo()
+                if (cachedUserProfile.length) {
+                    // Set cached user information
+                    setCurrentUser((prevState) => ({
+                        ...prevState,
+                        first_name: cachedUserInfo[0].first_name,
+                        last_name: cachedUserInfo[0].last_name,
+                    }))
+
+                    // Set cached user profile
+                    setUserProfile(cachedUserProfile[0])
+                    return
+                } else {
+                    console.log("❌ No cached user profile data found.")
+                    return
+                }
+            }
+        }
+    }, [])
+
+    // Memoized API fetching user profile attributes
+    const fetchUserProfile = useCallback(async (userId) => {
+        try {
+            const userInfoArray = await retrieveUserInfo() // Get token from IndexedDB
+            if (!navigator.onLine && !userInfoArray.length) {
+                console.log("❌ No stored user info")
+                return
+            }
+
+            let useableToken
+
+            // Use IndexedDB cached user profile data if offline
+            if (!navigator.onLine) {
+                console.log(
+                    "🌐 Offline: Using cached user profile data from IndexedDB"
+                )
+                const cachedUserProfile = await db.userProfile.toArray() // Fetch cached profile from IndexedDB
+                useableToken = userInfoArray[0].access_token
+                if (cachedUserProfile.length) {
+                    setUserProfile(cachedUserProfile[0])
+                    return
+                } else {
+                    console.log("❌ No cached user profile data found.")
+                    return
+                }
+            } else {
+                useableToken = localStorage.getItem(ACCESS_TOKEN)
+            }
+
+            // If online, fetch latest user profile data from API
+            const res = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/user-profile/`,
+                {
+                    headers: { Authorization: `Bearer ${useableToken}` },
+                }
+            )
+
+            const formattedData = {
                 glucoseMin: parseFloat(res.data.glucose_min),
                 glucoseMax: parseFloat(res.data.glucose_max),
                 glucoseTarget: parseFloat(res.data.glucose_target),
@@ -66,50 +153,83 @@ const Dashboard = () => {
                 diabeticProfile: res.data.diabetic_profile,
                 maxIOB: parseFloat(res.data.max_iob),
                 insulinDuration: parseInt(res.data.insulin_duration),
-            })
+            }
+
+            // Update online user info
+            setUserProfile(formattedData)
+
+            const userProfileWithId = {
+                id: userId,
+                ...formattedData,
+            }
+
+            // Update offline cache
+            await cacheUserProfile(userProfileWithId)
         } catch (error) {
             console.error("❌ Error fetching user profile:", error)
         }
-    }
+    }, [])
 
     useEffect(() => {
-        fetchUserProfile()
-    }, [])
+        fetchUser().then((userId) => {
+            if (userId) fetchUserProfile(userId)
+        })
+    }, [fetchUser, fetchUserProfile])
 
     // API fetching glucose data for 24h (Time in range bar)
-    useEffect(() => {
-        const fetchDataForTimeInRange = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=24`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                )
-                const formattedData = res.data.map((item) => ({
-                    timestamp:
-                        parseInt(item.timestamp.split(":")[0]) * 60 +
-                        parseInt(item.timestamp.split(":")[1]),
-                    glucose: parseFloat(item.glucose),
-                }))
-                setTimeInRangeData(formattedData)
-                console.log("Initial time in range data:", formattedData)
-            } catch (error) {
-                console.error("❌ Error fetching 24h glucose readings:", error)
-            }
-        }
+    const fetchDataForTimeInRange = useCallback(async () => {
+        if (lastFetchedTimespan.current === 24) return
 
-        fetchDataForTimeInRange()
+        try {
+            const token = localStorage.getItem(ACCESS_TOKEN)
+            const res = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=24`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            )
+            const formattedData = res.data.map((item) => ({
+                timestamp:
+                    parseInt(item.timestamp.split(":")[0]) * 60 +
+                    parseInt(item.timestamp.split(":")[1]),
+                glucose: parseFloat(item.glucose),
+                trend: item.trend || "NODATA",
+            }))
+
+            // Set time in range data
+            setTimeInRangeData(formattedData)
+
+            // Cache data
+            formattedData.forEach((item) => {
+                cacheGlucoseReading(item)
+            })
+
+            console.log("Initial time in range data:", formattedData)
+
+            lastFetchedTimespan.current = 24
+        } catch (error) {
+            console.error("❌ Error fetching 24h glucose readings:", error)
+            console.log(
+                `📈 Falling back on previously fetched TIR data points for the time in range bar.`
+            )
+            setTimeInRangeData(fallbackData)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // API fetching glucose data for the chart
     useEffect(() => {
-        const fetchDataForChart = async () => {
+        fetchDataForTimeInRange()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const fetchDataForChart = useCallback(
+        async (timespan) => {
+            if (lastFetchedTimespan.current === timespan) return
+
             try {
                 const token = localStorage.getItem(ACCESS_TOKEN)
                 const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=${selectedChartTimespan}`,
+                    `${import.meta.env.VITE_API_URL}/api/glucose-readings?timespan=${timespan}`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }
@@ -123,91 +243,115 @@ const Dashboard = () => {
                     bolus_injected: item.bolus_injected || 0,
                     basal_injected: item.basal_injected || 0,
                 }))
+
                 setChartData(formattedData)
+                lastFetchedTimespan.current = timespan // Update ref to avoid redundant calls
             } catch (error) {
                 console.error(
-                    `❌ Error fetching ${selectedChartTimespan}h glucose readings:`,
+                    `❌ Error fetching ${timespan}h glucose readings:`,
                     error
                 )
+                console.log(
+                    `📈 Falling back on previously fetched ${chartData.length} data points for the chart.`
+                )
+                setChartData(fallbackData)
             }
-        }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
 
-        fetchDataForChart()
+    useEffect(() => {
+        fetchDataForChart(selectedChartTimespan)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedChartTimespan])
 
-    // Fetch user full name (we must retrieve from User as opposed to UserProfile)
+    // WebSocket for real-time updates with reconnection logic
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const token = localStorage.getItem(ACCESS_TOKEN)
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/user/`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+        if (!navigator.onLine) return // No internet connection, no WebSocket connection
+
+        let socket
+        let reconnectInterval
+
+        const connectWebSocket = () => {
+            socket = new WebSocket(WEBSOCKET_URL)
+
+            socket.onopen = () => {
+                console.log("✅ WebSocket Connected")
+
+                // Clear any existing reconnection attempts
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval)
+                    reconnectInterval = null
+                }
+            }
+
+            socket.onmessage = (event) => {
+                const newReading = JSON.parse(event.data)
+                console.log("📡 WebSocket Data:", newReading)
+
+                const formattedReading = {
+                    timestamp:
+                        new Date().getHours() * 60 + new Date().getMinutes(),
+                    glucose: parseFloat(newReading.glucose),
+                    trend: newReading.trend || "NODATA",
+                    bolus_injected: newReading.bolus_injected || 0,
+                    basal_injected: newReading.basal_injected || 0,
+                }
+
+                // Append new glucose data (Real-time)
+                setGlucoseData((prev) => [...prev, formattedReading])
+
+                // Keep chartData updated (Filter old data)
+                setChartData((prev) => {
+                    const updatedData = [...prev, formattedReading]
+                    const cutoffTime =
+                        new Date().getTime() -
+                        selectedChartTimespan * 60 * 60 * 1000
+                    const filteredData = updatedData.filter(
+                        (entry) => entry.timestamp * 60 * 1000 >= cutoffTime
+                    )
+                    return filteredData.length > 0 ? filteredData : updatedData
+                })
+
+                // Update profile-related attributes
+                fetchUserProfile()
+
+                // Update data for time in range bar
+                setTimeInRangeData((prev) => {
+                    const updatedData = [
+                        ...prev,
+                        {
+                            timestamp: formattedReading.timestamp,
+                            glucose: formattedReading.glucose,
+                        },
+                    ]
+                    return updatedData
+                })
+            }
+
+            socket.onerror = (error) =>
+                console.error("❌ WebSocket Error:", error)
+
+            socket.onclose = () => {
+                console.log(
+                    "❌ WebSocket Disconnected, attempting to reconnect..."
                 )
-                setCurrentUser(res.data)
-            } catch (error) {
-                console.error("❌ Error fetching user:", error)
+
+                // Attempt reconnection every 5 seconds
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(connectWebSocket, 5000)
+                }
             }
         }
 
-        fetchUser()
-    }, [])
+        connectWebSocket()
 
-    // WebSocket for real-time updates
-    useEffect(() => {
-        const socket = new WebSocket(WEBSOCKET_URL)
-
-        socket.onopen = () => console.log("✅ WebSocket Connected")
-
-        socket.onmessage = (event) => {
-            const newReading = JSON.parse(event.data)
-            console.log("📡 WebSocket Data:", newReading)
-
-            const formattedReading = {
-                timestamp: new Date().getHours() * 60 + new Date().getMinutes(),
-                glucose: parseFloat(newReading.glucose),
-                trend: newReading.trend || "NODATA",
-                bolus_injected: newReading.bolus_injected || 0,
-                basal_injected: newReading.basal_injected || 0,
-            }
-
-            // Append new glucose data (Real-time)
-            setGlucoseData((prev) => [...prev, formattedReading])
-
-            // Keep chartData updated (Filter old data)
-            setChartData((prev) => {
-                const updatedData = [...prev, formattedReading]
-                const cutoffTime =
-                    new Date().getTime() -
-                    selectedChartTimespan * 60 * 60 * 1000
-                const filteredData = updatedData.filter(
-                    (entry) => entry.timestamp * 60 * 1000 >= cutoffTime
-                )
-                return filteredData.length > 0 ? filteredData : updatedData
-            })
-
-            // Update profile-related attributes
-            fetchUserProfile()
-
-            // Update data for time in range bar
-            setTimeInRangeData((prev) => {
-                const updatedData = [
-                    ...prev,
-                    {
-                        timestamp: formattedReading.timestamp,
-                        glucose: formattedReading.glucose,
-                    },
-                ]
-                return updatedData
-            })
+        return () => {
+            if (socket) socket.close()
+            if (reconnectInterval) clearInterval(reconnectInterval)
         }
-
-        socket.onerror = (error) => console.error("❌ WebSocket Error:", error)
-
-        return () => socket.close()
-    }, [selectedChartTimespan])
+    }, [fetchUserProfile, selectedChartTimespan])
 
     if (!userProfile) return <h1>Loading dashboard...</h1>
 
@@ -253,9 +397,11 @@ const Dashboard = () => {
                     <img
                         src="/menu.svg"
                         className="w-6 h-6 cursor-pointer z-50"
-                        onClick={() => setIsMenuOpen((prev) => {
-                            return !prev
-                        })}
+                        onClick={() =>
+                            setIsMenuOpen((prev) => {
+                                return !prev
+                            })
+                        }
                         alt="Menu"
                     />
                 </div>
@@ -265,6 +411,15 @@ const Dashboard = () => {
                     {currentUser.first_name} {currentUser.last_name}&apos;s
                     Dashboard
                 </h1>
+
+                {/* Logout button */}
+                <a href="/logout" className="hidden sm:block">
+                    <img
+                        src="/logout.svg"
+                        className="absolute right-0 top-0 bottom-0 my-auto mr-4 w-6 h-6 cursor-pointer"
+                        alt="Logout"
+                    />
+                </a>
 
                 {isMenuOpen && (
                     <div className="absolute top-[3.5rem] left-0 right-0 bg-[#eac6eb] shadow-lg flex flex-col items-center py-2">
@@ -296,6 +451,16 @@ const Dashboard = () => {
                             />
                             Pump Settings
                         </button>
+                        <a href="/logout">
+                            <button className="py-2 px-4 w-full text-left">
+                                <img
+                                    src="/logout.svg"
+                                    className="w-6 h-6 inline-block mr-2"
+                                    alt="Logout"
+                                />
+                                Logout
+                            </button>
+                        </a>
                     </div>
                 )}
             </div>
@@ -350,6 +515,7 @@ const Dashboard = () => {
                 glucoseMin={userProfile.glucoseMin}
                 insulinOnBoard={userProfile.iob}
                 maxBolus={userProfile.bolusMax}
+                maxIOB={userProfile.maxIOB}
                 setIsBolusOpen={() => setIsBolusOpen(false)}
             />
 

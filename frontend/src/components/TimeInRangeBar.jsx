@@ -1,6 +1,6 @@
 import PropTypes from "prop-types"
 
-const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
+const TimeInRangeBar = ({ data, glucoseMin, glucoseMax }) => {
     const totalEntries = data.length
     const lowCount = data.filter((entry) => entry.glucose < glucoseMin).length
     const inRangeCount = data.filter(
@@ -116,7 +116,7 @@ const TimeInRangeBar = ({ data, glucoseMin = 3.9, glucoseMax = 11 }) => {
                 </span>
                 <br />
                 <i>
-                    <span style={{ fontSize: "0.9rem", color: "#8F8F8F" }}>
+                    <span style={{ fontSize: "0.9rem", color: "#737373" }}>
                         (past 24 hours)
                     </span>
                 </i>

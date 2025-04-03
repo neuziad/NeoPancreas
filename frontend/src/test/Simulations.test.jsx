@@ -14,7 +14,7 @@ import "jest-localstorage-mock"
 jest.mock("jwt-decode")
 jest.mock("../api")
 
-describe("Simulation Functions", () => {
+describe("Simulation Functions Component", () => {
     const mockToken =
         "Yf5zfjwkdPs1AroQise4Omm1ajOiciGgI9K1AcAeI0EyudtVDYTB7sZGQhAM58xB"
     const mockUserId = "64"
@@ -38,7 +38,7 @@ describe("Simulation Functions", () => {
             const result = await startSimulation()
             expect(result).toBe(true)
             expect(api.post).toHaveBeenCalledWith(
-                `/api/start-simulation/${mockUserId}/`,
+                "/api/start-simulation/",
                 null,
                 expect.objectContaining({
                     headers: {
@@ -77,7 +77,7 @@ describe("Simulation Functions", () => {
             const result = await stopSimulation()
             expect(result).toBe(true)
             expect(api.post).toHaveBeenCalledWith(
-                `/api/stop-simulation/${mockUserId}/`,
+                `/api/stop-simulation/`,
                 null,
                 expect.objectContaining({
                     headers: {
@@ -114,7 +114,7 @@ describe("Simulation Functions", () => {
             const result = await getSimulationStatus()
             expect(result).toBe(true)
             expect(api.get).toHaveBeenCalledWith(
-                `/api/simulation-status/${mockUserId}/`,
+                `/api/simulation-status/`,
                 expect.objectContaining({
                     headers: {
                         Authorization: `Bearer ${mockToken}`,

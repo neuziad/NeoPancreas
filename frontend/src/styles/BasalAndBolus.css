@@ -2,14 +2,6 @@
     font-family: "Roboto", sans-serif;
 }
 
-.basal-bolus-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    gap: 10px;
-}
-
 .iob-box {
     position: relative;
     top: 0.5rem;
@@ -26,7 +18,7 @@
 .exercise-mode {
     position: relative;
     top: 0.5rem;
-    left: 6.55rem;
+    left: 18%;
     border: 1px solid black;
     padding: 5px 10px;
     font-weight: bold;
@@ -79,7 +71,7 @@
 
 .bolus-section p {
     font-style: italic;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #555;
 }
 

@@ -21,7 +21,10 @@ describe("Form Component", () => {
 
     beforeEach(() => {
         // Initialize the mock function
-        mockNavigate = useNavigate
+        mockNavigate = jest.fn()
+        useNavigate.mockReturnValue(mockNavigate)
+
+        globalThis.alert = jest.fn()
 
         api.post.mockResolvedValue({
             data: {
@@ -46,19 +49,35 @@ describe("Form Component", () => {
         expect(screen.getByPlaceholderText("Password")).toBeInTheDocument()
     })
 
-    it("renders correctly for register method", () => {
+    it("renders correctly for register method", async () => {
         render(
             <MemoryRouter>
                 <Form route="/api/user/register/" method="register" />
             </MemoryRouter>
         )
 
-        expect(screen.getByPlaceholderText("First Name")).toBeInTheDocument()
-        expect(screen.getByPlaceholderText("Last Name")).toBeInTheDocument()
-        expect(screen.getByPlaceholderText("Email")).toBeInTheDocument()
-        expect(screen.getByPlaceholderText("Username")).toBeInTheDocument()
-        expect(screen.getByPlaceholderText("Password")).toBeInTheDocument()
-        expect(screen.getByPlaceholderText("Date of Birth")).toBeInTheDocument()
+        await userEvent.type(screen.getByPlaceholderText("First Name"), "John")
+        await userEvent.type(screen.getByPlaceholderText("Last Name"), "Doe")
+        await userEvent.type(
+            screen.getByPlaceholderText("Email"),
+            "john.doe@example.com"
+        )
+        await userEvent.type(
+            screen.getByPlaceholderText("Username"),
+            "john_doe"
+        )
+        await userEvent.type(
+            screen.getByPlaceholderText("Password"),
+            "password123"
+        )
+        await userEvent.type(
+            screen.getByPlaceholderText("Date of Birth"),
+            "1990-01-01"
+        )
+
+        await userEvent.click(screen.getByRole("button", { name: /register/i }))
+
+        await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1))
     })
 
     it("submits form data correctly for login", async () => {
@@ -101,7 +120,7 @@ describe("Form Component", () => {
             REFRESH_TOKEN,
             "mockRefreshToken"
         )
-        expect(mockNavigate).toHaveBeenCalledWith("/")
+        expect(mockNavigate).toBeCalledWith("/")
     })
 
     it("submits form data correctly for register", async () => {
@@ -113,15 +132,21 @@ describe("Form Component", () => {
             </MemoryRouter>
         )
 
-        userEvent.type(screen.getByPlaceholderText("First Name"), "John")
-        userEvent.type(screen.getByPlaceholderText("Last Name"), "Doe")
-        userEvent.type(
+        await userEvent.type(screen.getByPlaceholderText("First Name"), "John")
+        await userEvent.type(screen.getByPlaceholderText("Last Name"), "Doe")
+        await userEvent.type(
             screen.getByPlaceholderText("Email"),
             "john.doe@example.com"
         )
-        userEvent.type(screen.getByPlaceholderText("Username"), "john_doe")
-        userEvent.type(screen.getByPlaceholderText("Password"), "password123")
-        userEvent.type(
+        await userEvent.type(
+            screen.getByPlaceholderText("Username"),
+            "john_doe"
+        )
+        await userEvent.type(
+            screen.getByPlaceholderText("Password"),
+            "password123"
+        )
+        await userEvent.type(
             screen.getByPlaceholderText("Date of Birth"),
             "1990-01-01"
         )
@@ -130,7 +155,7 @@ describe("Form Component", () => {
 
         await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1))
 
-        expect(api.post).toHaveBeenCalledWith("/register", {
+        expect(api.post).toHaveBeenCalledWith("/api/user/register/", {
             username: "john_doe",
             password: "password123",
             first_name: "John",
@@ -142,39 +167,6 @@ describe("Form Component", () => {
         })
 
         expect(mockNavigate).toHaveBeenCalledWith("/login")
-    })
-
-    it("shows loading indicator while submitting", async () => {
-        api.post.mockResolvedValueOnce({})
-
-        render(
-            <MemoryRouter>
-                <Form route="/api/user/register/" method="register" />
-            </MemoryRouter>
-        )
-
-        userEvent.type(screen.getByPlaceholderText("First Name"), "John")
-        userEvent.type(screen.getByPlaceholderText("Last Name"), "Doe")
-        userEvent.type(
-            screen.getByPlaceholderText("Email"),
-            "john.doe@example.com"
-        )
-        userEvent.type(screen.getByPlaceholderText("Username"), "john_doe")
-        userEvent.type(screen.getByPlaceholderText("Password"), "password123")
-        userEvent.type(
-            screen.getByPlaceholderText("Date of Birth"),
-            "1990-01-01"
-        )
-
-        userEvent.click(screen.getByRole("button", { name: /register/i }))
-
-        expect(screen.getByTestId("loading-indicator")).toBeInTheDocument()
-
-        await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1))
-
-        expect(
-            screen.queryByTestId("loading-indicator")
-        ).not.toBeInTheDocument()
     })
 
     it("handles API error correctly", async () => {

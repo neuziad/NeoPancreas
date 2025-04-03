@@ -1,0 +1,8 @@
+Tests,Average TIR percentage (%),Average LBGI risk index,Average HBGI risk index,Average total risk index
+1control,16.8,,,
+2static_basal,9.0,,,
+3dynamic_basal,91.1,,,
+4dynamic_plus_exercise,81.7,,,
+5dynamic_basal_plus_meals,89.0,,,
+6dynamic_basal_plus_meals_exercise,78.4,,,
+7lossy_connection,16.8,,,

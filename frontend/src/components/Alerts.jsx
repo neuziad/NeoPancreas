@@ -33,6 +33,11 @@ const AlertModal = ({ type, onClose }) => {
     useEffect(() => {
         if (!type) return
 
+        if (!Object.prototype.hasOwnProperty.call(alertMessages, type)) {
+            console.warn(`Alert type "${type}" not found. Setting to null.`)
+            onClose(null)
+        }
+
         const alertSound = new Audio(alertMessages[type].sound)
         alertSound.loop = true
         alertSound.volume = 0.3
@@ -43,7 +48,7 @@ const AlertModal = ({ type, onClose }) => {
             alertSound.pause()
             alertSound.currentTime = 0
         }
-    }, [type])
+    }, [onClose, type])
 
     return (
         <div className="alert-modal">
@@ -55,7 +60,7 @@ const AlertModal = ({ type, onClose }) => {
                     src={alertMessages[type].icon}
                     alt={alertMessages[type].text}
                 />
-                <h2>{alertMessages[type].text}</h2>
+                <h2 style={{ paddingTop: "5%" }}>{alertMessages[type].text}</h2>
                 <button onClick={onClose}>Stop Alarm</button>
             </div>
         </div>
@@ -67,13 +72,34 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
     const [wasHighBefore, setWasHighBefore] = useState(false)
     const [wasLowBefore, setWasLowBefore] = useState(false)
 
+    // Request notification permission on mount
     useEffect(() => {
-        const latestGlucose = glucoseData[glucoseData.length - 1] || 0
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission()
+        }
+    }, [])
+
+    // Function to send notifications
+    const sendNotification = (type) => {
+        if (Notification.permission === "granted") {
+            new Notification(alertMessages[type].text, {
+                body: "Check your glucose levels now!",
+                icon: alertMessages[type].icon,
+            })
+        }
+    }
+
+    useEffect(() => {
+        const latestGlucose =
+            glucoseData.length > 0
+                ? glucoseData[glucoseData.length - 1].glucose
+                : 0
         const recentZeros = glucoseData.slice(-5).filter((g) => g === 0).length
 
         if (latestGlucose > glucoseMax && !wasHighBefore) {
             setAlertType("high")
             setWasHighBefore(true)
+            sendNotification("high")
         } else if (
             latestGlucose < glucoseMin &&
             latestGlucose > 0 &&
@@ -81,15 +107,25 @@ const AlertMonitor = ({ glucoseData, glucoseMin, glucoseMax }) => {
         ) {
             setAlertType("low")
             setWasLowBefore(true)
+            sendNotification("low")
         } else if (recentZeros >= 3) {
             setAlertType("connection")
+            sendNotification("connection")
         }
 
         if (latestGlucose <= glucoseMax && latestGlucose >= glucoseMin) {
             setWasHighBefore(false)
             setWasLowBefore(false)
+            setAlertType(null)
         }
-    }, [glucoseData, glucoseMin, glucoseMax, wasHighBefore, wasLowBefore])
+    }, [
+        glucoseData,
+        glucoseMin,
+        glucoseMax,
+        wasHighBefore,
+        wasLowBefore,
+        alertType,
+    ])
 
     if (!alertType) return null
 

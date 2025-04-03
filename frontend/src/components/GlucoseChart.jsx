@@ -12,10 +12,15 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
     const nowInMinutes = new Date().getHours() * 60 + new Date().getMinutes()
     const startTime = Math.max(0, nowInMinutes - timeScale * 60)
     return (
-        <div data-testid="scatter-chart" className="w-screen relative">
+        // Addition of min-height to reduce large layout shifts
+        <div
+            data-testid="scatter-chart"
+            style={{ minHeight: "300px" }}
+            className="w-screen relative"
+        >
             {/* Chart */}
             {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={440}>
+                <ResponsiveContainer width="98%" height={440}>
                     <ScatterChart
                         data={chartData}
                         margin={{ top: 10, bottom: 10 }}
@@ -83,11 +88,7 @@ const GlucoseChart = ({ chartData, glucoseMin, glucoseMax, timeScale }) => {
                 </ResponsiveContainer>
             ) : (
                 <div className="text-center mt-4">
-                    <h1>Loading glucose data...</h1>
-                    <p>
-                        If this takes too long to load, you may not have any
-                        data for this range.
-                    </p>
+                    <h1>Loading data if available...</h1>
                 </div>
             )}
         </div>

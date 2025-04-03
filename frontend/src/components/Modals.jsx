@@ -29,7 +29,13 @@ const BolusModal = ({
         if (emEnabled) bolusDose *= EXERCISE_MODE_MODIFIER
 
         bolusDose -= insulinOnBoard
-        return Math.max(0, Math.min(bolusDose, maxBolus)).toFixed(2)
+
+        bolusDose = Math.max(0, Math.min(bolusDose, maxBolus))
+
+        // Round to the nearest 0.05
+        bolusDose = Math.round(bolusDose / 0.05) * 0.05
+
+        return parseFloat(bolusDose.toFixed(2))
     }, [
         carbs,
         carbRatio,
@@ -73,7 +79,10 @@ const BolusModal = ({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center modal-overlay">
+        <div
+            className="fixed inset-0 flex items-center justify-center modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#BCD4EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -212,7 +221,10 @@ const SensorModal = ({
     }
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay">
+        <div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#F5E1C8] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -382,7 +394,10 @@ const PumpModal = ({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay">
+        <div
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+            style={{ animation: "fadeIn 0.3s ease-in-out" }}
+        >
             <div className="bg-[#EAC7EB] w-[400px] p-6 rounded-xl shadow-lg relative text-center">
                 <button
                     className="absolute top-3 right-3 text-xl"
@@ -516,25 +531,49 @@ const FooterModals = () => {
             {/* Copyright / Attributions Modal */}
             {isAttributionsOpen && (
                 <div
-                    className="fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+                    style={{ animation: "fadeIn 0.3s ease-in-out" }}
                     onClick={() => setIsAttributionsOpen(false)}
                 >
                     <div
-                        className="bg-white dark:bg-gray-800 p-4 rounded-md w-96 mx-auto mt-32"
+                        className="bg-white p-4 rounded-md w-96 mx-auto mt-32"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-lg font-bold mb-2">
                             Copyright / Attributions
                         </h2>
-                        <ul className="list-disc pl-4">
-                            <li>All rights reserved</li>
-                            <li>
-                                Some assets may be attributed to their original
-                                creators
-                            </li>
-                        </ul>
+                        <p>
+                            {" "}
+                            Created by <b>Ziad El Krekshi</b> for CSC3094 BSc
+                            Computer Science Dissertation Project
+                        </p>
+                        <p>
+                            {" "}
+                            Supervised by <b>Dr. Daniel Nesbitt</b>{" "}
+                        </p>
+                        <p>
+                            Menu collapse icon by{" "}
+                            <a
+                                href="https://www.svgrepo.com/author/Dazzle%20UI/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <b>Dazzle UI</b>
+                            </a>
+                        </p>
+                        <p>
+                            Carbohydrates icon by{" "}
+                            <a
+                                href="https://www.svgrepo.com/author/Leonid%20Tsvetkov/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <b>Leonid Tsvetkov</b>
+                            </a>
+                        </p>
+                        <br />
                         <button
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            className="pt-2 bg-pink-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                             onClick={() => setIsAttributionsOpen(false)}
                         >
                             Close
@@ -546,22 +585,29 @@ const FooterModals = () => {
             {/* Medical Disclaimer Modal */}
             {isDisclaimerOpen && (
                 <div
-                    className="fixed inset-0 bg-gray-900 bg-opacity-50 z-10"
+                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-25 modal-overlay"
+                    style={{ animation: "fadeIn 0.3s ease-in-out" }}
                     onClick={() => setIsDisclaimerOpen(false)}
                 >
                     <div
-                        className="bg-white dark:bg-gray-800 p-4 rounded-md w-96 mx-auto mt-32"
+                        className="bg-white p-4 rounded-md w-96 mx-auto mt-32"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-lg font-bold mb-2">
                             Medical Disclaimer
                         </h2>
                         <p className="mb-4">
-                            This app does not provide medical advice. Always
-                            consult with a healthcare professional.
+                            This project is meant to demonstrate the possible
+                            uses for web-based technologies in creating a hybrid
+                            closed-loop insulin system. As such, this software
+                            only works on simulated patients and data. It is not
+                            intended to be used for real-world patients and is
+                            not medically approved, nor was it created by a
+                            medical professional (just a diabetic computer
+                            scientist).
                         </p>
                         <button
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            className="pt-2 bg-pink-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                             onClick={() => setIsDisclaimerOpen(false)}
                         >
                             Close
@@ -585,6 +631,7 @@ BolusModal.propTypes = {
     glucoseMin: PropTypes.number.isRequired,
     insulinOnBoard: PropTypes.number.isRequired,
     maxBolus: PropTypes.number.isRequired,
+    maxIOB: PropTypes.number.isRequired,
 }
 
 SensorModal.propTypes = {

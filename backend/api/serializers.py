@@ -24,7 +24,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "carb_ratio": {"default": 10.0},
             "insulin_duration": {"default": 240},
             "iob": {"default": 0.00},
-            "cob": {"default": 0.00},
             "max_iob": {"default": 25.0},
             "diabetic_profile": {"required": False},
             "em_enabled": {"default": False},
@@ -90,6 +89,9 @@ class GlucoseSerializer(serializers.ModelSerializer):
         model = GlucoseReading
         fields = ["id", "timestamp", "reading", "trend", "patient"]
         extra_kwargs = {"patient": {"read_only": True}}
+
+    def create(self, validated_data):
+        return super().create(validated_data)
 
 
 class SensorSettingsSerializer(serializers.ModelSerializer):

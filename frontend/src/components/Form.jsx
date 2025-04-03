@@ -60,7 +60,13 @@ function Form({ route, method }) {
 
     return (
         <form onSubmit={handleSubmit} className="form-container">
-            <h1>{name}</h1>
+            <img
+                src="/wordmark.png"
+                alt="NeoPancreas Logo"
+                style={{ width: "14vw", paddingBottom: "2vh" }}
+            />
+
+            <h1 className="text-2xl font-bold">{name}</h1>
 
             {method === "register" && (
                 <>
@@ -113,6 +119,14 @@ function Form({ route, method }) {
             <button className="form-button" type="submit">
                 {name}
             </button>
+
+            <div className="form-link">
+                {method === "login" ? (
+                    <a href="/register">Create new account</a>
+                ) : (
+                    <a href="/login">Log into existing account</a>
+                )}
+            </div>
         </form>
     )
 }

@@ -1,32 +1,61 @@
+const API_CACHE = "neopancreas-api-cache"
+
+// Cache HTML
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open("my-cache").then((cache) => {
+        caches.open(API_CACHE).then((cache) => {
             return cache.addAll([
                 "/",
-                "/login",
-                "/register",
-                "/dashboard",
-                "/api/token/",
-                "/api/token/refresh/",
-                "/api/start-simulation/",
-                "/api/stop-simulation/",
-                "/api/simulation-status/",
-                "/api/glucose-readings/",
-                "/api/user-profile/",
-                "/api/user/",
-                "/api/toggle-em/",
-                "/api/sensor-settings/",
-                "/api/pump-settings/",
-                "/api/inject-bolus/",
+                "/src/styles/Alerts.css",
+                "/src/styles/BasalAndBolus.css",
+                "/src/styles/Dashboard.css",
+                "/src/styles/Form.css",
+                "/src/styles/GlucoseReading.css",
+                "/src/styles/LoadingIndicator.css",
+                "/src/styles/Modals.css",
+                "/favicon.ico",
             ])
         })
     )
 })
 
+// Fetch cached HTML
 self.addEventListener("fetch", (event) => {
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request)
-        })
+        fetch(event.request).catch(() =>
+            caches.match(event.request).then((response) => response)
+        )
     )
+})
+
+// Handle API caching
+self.addEventListener("fetch", (event) => {
+    const { request } = event
+
+    if (request.url.includes("/api/glucose-readings")) {
+        event.respondWith(
+            fetch(request)
+                .then((response) => {
+                    // Clone response & store it
+                    const clonedResponse = response.clone()
+                    caches.open(API_CACHE).then((cache) => {
+                        cache.put(request, clonedResponse)
+                    })
+                    return response
+                })
+                .catch(() => {
+                    // If offline, serve cached API response
+                    return caches.match(request).then((cachedResponse) => {
+                        return (
+                            cachedResponse ||
+                            new Response("[]", {
+                                headers: { "Content-Type": "application/json" },
+                            })
+                        )
+                    })
+                })
+        )
+    } else {
+        event.respondWith(fetch(request).catch(() => caches.match(request)))
+    }
 })
