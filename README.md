@@ -42,6 +42,11 @@ Enter the starting test number (1-7): _
 Enter the ending test number (1-7): _
 ```
 
+To run the miscellaneous tests:
+```bash
+python run.py --misc
+```
+
 ## .env Attributes
 
 ### Back-end
