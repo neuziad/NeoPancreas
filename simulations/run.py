@@ -33,6 +33,7 @@
 #    which is mainly an issue in the long term, and is preferable to the more immediately fatal
 #    condition of hypoglycaemia, which may occur if CGM connection is lost and the algorithm
 #    can't adjust insulin doses appropriately.
+#  Miscellaneous tests: Test 3 (dynamic basal rate) simulated on adolescent and child patients
 #
 # Simglucose generates a variety of files as a result of simulations, of those being evaluated:
 # 1. CSV data detailing patient glycaemic data, including: blood glucose (in mg/dL), CGM blood
@@ -100,6 +101,7 @@ from tests.vii_lossy_connection import run_lossy_connection
 
 SAVE_PATH = "./results"
 PATIENTS = [f"adult#{str(i).zfill(3)}" for i in range(1, 6)]
+MISC_PATIENTS = ["child#001", "child#002", "adolescent#001", "adolescent#002"]
 
 
 def main(start, end):
@@ -185,17 +187,27 @@ def main(start, end):
         except Exception as e:
             print(f"Error: {e}", file=sys.stderr)
 
+def main_misc():
+    for patient in MISC_PATIENTS:
+        run_dynamic_basal(patient, f"{SAVE_PATH}/misc_{patient}")
+    
+    print("Miscellaneous tests completed successfully.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--all", action="store_true", help="Run all simulations at once"
     )
+    parser.add_argument(
+        "--misc", action="store_true", help="Run miscellaneous tests"
+    )
     args = parser.parse_args()
 
     try:
         if args.all:
             main(1, 7)
+        elif args.misc:
+            main_misc()
         else:
             start = int(input("Enter the starting test number (1-7): ") or 1)
             end = int(input("Enter the ending test number (1-7): ") or 7)
